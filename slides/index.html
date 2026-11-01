@@ -291,6 +291,10 @@
              ═══════════════════════════════════════════════════════════ -->
         <section class="slide" data-slide="2" aria-label="The problem">
           <div class="ghost-num">02</div>
+          <div
+            class="bloom"
+            style="width: 520px; height: 520px; top: 40px; left: -180px; opacity: 0.10"
+          ></div>
 
           <div class="relative flex h-full gap-14">
             <!-- Left: the claim -->
@@ -306,9 +310,13 @@
                 </h2>
               </div>
 
-              <div class="card-accent p-6">
+              <!-- The gap — the main selling point -->
+              <div class="card-accent relative overflow-hidden p-7">
+                <div class="rule-accent mb-5"></div>
                 <div class="pill pill-accent mb-4">The gap</div>
-                <p class="p-body text-ink">
+                <p
+                  class="text-[length:21px] font-medium leading-[1.28] tracking-[-0.011em] text-ink"
+                >
                   Nobody has unified
                   <span class="text-accent">code quality</span>,
                   <span class="text-accent">code security</span> and
@@ -325,10 +333,10 @@
                   <div class="n">01</div>
                   <div>
                     <div class="mb-2 flex items-center gap-3">
-                      <h3 class="h-sub">Reviews queue behind humans</h3>
+                      <h3 class="h-sub text-ink-muted">Reviews queue behind humans</h3>
                       <span class="pill pill-warn">Bottleneck</span>
                     </div>
-                    <p class="p-body max-w-[62ch]">
+                    <p class="p-body max-w-[62ch] text-ink-muted">
                       Every PR waits for an available reviewer. On a busy repo that
                       is hours to days — by which point the code has already moved
                       on.
@@ -340,10 +348,10 @@
                   <div class="n">02</div>
                   <div>
                     <div class="mb-2 flex items-center gap-3">
-                      <h3 class="h-sub">Security is a separate purchase</h3>
+                      <h3 class="h-sub text-ink-muted">Security is a separate purchase</h3>
                       <span class="pill pill-danger">Blind spot</span>
                     </div>
-                    <p class="p-body max-w-[62ch]">
+                    <p class="p-body max-w-[62ch] text-ink-muted">
                       SAST, SCA, DAST, CSPM, pentest. Different vendors, different
                       dashboards, different onboarding, different months of the
                       year.
@@ -355,10 +363,10 @@
                   <div class="n">03</div>
                   <div>
                     <div class="mb-2 flex items-center gap-3">
-                      <h3 class="h-sub">Pentest is a snapshot</h3>
+                      <h3 class="h-sub text-ink-muted">Pentest is a snapshot</h3>
                       <span class="pill pill-info">Point in time</span>
                     </div>
-                    <p class="p-body max-w-[62ch]">
+                    <p class="p-body max-w-[62ch] text-ink-muted">
                       An annual report describes what was true on one day.
                       Everything merged in the other 364 days went unexamined.
                     </p>
