@@ -761,7 +761,7 @@
           <div class="mt-6 flex-1 min-h-0">
             <svg
               class="dg"
-              viewBox="0 0 1130 478"
+              viewBox="0 0 1130 484"
               role="img"
               aria-label="Two-row diagram. Top row: the classic ADLC pipeline as disconnected tools with broken handoffs and a single annual pentest point. Bottom row: Feluda as one continuous agentic loop triggered on every commit and every deploy."
             >
@@ -970,8 +970,19 @@
               </text>
               <line class="dg-divider" x1="0" y1="336" x2="1130" y2="336" />
 
-              <!-- The wash behind the Feluda band -->
-              <rect class="dg-wash" x="0" y="350" width="1130" height="104" rx="12" />
+              <!-- The highlighted band behind the Feluda loop. It wraps the
+                   agent row, the return rail and its caption, so the whole
+                   "one loop" idea reads as a single highlighted region. -->
+              <rect
+                class="dg-band-accent"
+                x="0"
+                y="344"
+                width="1130"
+                height="134"
+                rx="14"
+              />
+              <!-- Accent edge on the leading side of the band -->
+              <rect class="dg-band-accent-edge" x="0" y="344" width="3" height="134" rx="1.5" />
 
               <!-- Trigger -->
               <rect class="dg-box-accent" x="0" y="368" width="150" height="68" rx="10" />
@@ -1024,18 +1035,18 @@
 
               <!-- Return loop — findings feed the next commit.
                    Drops from the Black box bottom (436) to the return rail
-                   (452), runs left and rises to the Trigger box's bottom
+                   (454), runs left and rises to the Trigger box's bottom
                    edge (436). The head tip stops on that edge so it does not
                    punch through the box. -->
               <path
                 class="dg-line-accent"
-                d="M 1064 436 L 1064 452 L 75 452 L 75 436"
+                d="M 1064 436 L 1064 454 L 75 454 L 75 436"
                 marker-end="url(#ah-accent)"
               />
               <text
                 class="dg-mono-sm dg-accent"
                 x="602"
-                y="466"
+                y="471"
                 text-anchor="middle"
               >
                 findings become the next commit's input — the loop closes

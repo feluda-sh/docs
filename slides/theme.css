@@ -1051,6 +1051,17 @@
   fill: var(--ac);
   opacity: 0.06;
 }
+/* Highlighted band — used to mark the "good" half of a comparison diagram.
+   Tinted fill plus a visible edge so the band reads at presentation
+   distance without competing with the boxes that sit on it. */
+.dg-band-accent {
+  fill: color-mix(in srgb, var(--ac) 10%, var(--surface-1));
+  stroke: var(--ac-edge);
+  stroke-width: 1;
+}
+.dg-band-accent-edge {
+  fill: var(--ac);
+}
 .dg-hatch {
   fill: none;
   stroke: var(--edge-strong);
