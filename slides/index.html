@@ -761,18 +761,26 @@
           <div class="mt-6 flex-1 min-h-0">
             <svg
               class="dg"
-              viewBox="0 0 1130 470"
+              viewBox="0 0 1130 478"
               role="img"
               aria-label="Two-row diagram. Top row: the classic ADLC pipeline as disconnected tools with broken handoffs and a single annual pentest point. Bottom row: Feluda as one continuous agentic loop triggered on every commit and every deploy."
             >
               <defs>
+                <!--
+                  Arrowheads use markerUnits="userSpaceOnUse" so their size is
+                  fixed in diagram units and does not scale with stroke-width.
+                  refX=10 puts the marker TIP on the path endpoint (not past it),
+                  so heads land exactly on box edges instead of overshooting.
+                  Each head is 11 units long; shafts are kept >= 14 units.
+                -->
                 <marker
                   id="ah"
                   viewBox="0 0 10 10"
-                  refX="9"
+                  refX="10"
                   refY="5"
-                  markerWidth="7"
-                  markerHeight="7"
+                  markerWidth="11"
+                  markerHeight="11"
+                  markerUnits="userSpaceOnUse"
                   orient="auto-start-reverse"
                 >
                   <path class="dg-arrow" d="M 0 0 L 10 5 L 0 10 z" />
@@ -780,10 +788,11 @@
                 <marker
                   id="ah-accent"
                   viewBox="0 0 10 10"
-                  refX="9"
+                  refX="10"
                   refY="5"
-                  markerWidth="7"
-                  markerHeight="7"
+                  markerWidth="11"
+                  markerHeight="11"
+                  markerUnits="userSpaceOnUse"
                   orient="auto-start-reverse"
                 >
                   <path class="dg-arrow-accent" d="M 0 0 L 10 5 L 0 10 z" />
@@ -791,10 +800,11 @@
                 <marker
                   id="ah-danger"
                   viewBox="0 0 10 10"
-                  refX="9"
+                  refX="10"
                   refY="5"
-                  markerWidth="7"
-                  markerHeight="7"
+                  markerWidth="11"
+                  markerHeight="11"
+                  markerUnits="userSpaceOnUse"
                   orient="auto-start-reverse"
                 >
                   <path class="dg-arrow-danger" d="M 0 0 L 10 5 L 0 10 z" />
@@ -857,32 +867,34 @@
               </g>
 
               <!-- Broken handoff arrows between the silos -->
+              <!-- Shafts run from each box's right edge to the next box's left
+                   edge; arrowhead tips land exactly on the target edge. -->
               <g class="dg-line-broken" marker-end="url(#ah-danger)">
-                <path d="M 132 83 L 164 83" />
-                <path d="M 304 83 L 336 83" />
-                <path d="M 476 83 L 508 83" />
-                <path d="M 648 83 L 680 83" />
-                <path d="M 820 83 L 852 83" />
+                <path d="M 128 83 L 172 83" />
+                <path d="M 300 83 L 344 83" />
+                <path d="M 472 83 L 516 83" />
+                <path d="M 644 83 L 688 83" />
+                <path d="M 816 83 L 860 83" />
               </g>
 
-              <!-- Handoff-gap callouts -->
+              <!-- Handoff-gap callouts — sit below the arrows, above the rails -->
               <g>
-                <text class="dg-mono-sm dg-danger" x="132" y="132" text-anchor="middle">
+                <text class="dg-mono-sm dg-danger" x="150" y="140" text-anchor="middle">
                   no context
                 </text>
-                <text class="dg-mono-sm dg-danger" x="304" y="132" text-anchor="middle">
+                <text class="dg-mono-sm dg-danger" x="322" y="140" text-anchor="middle">
                   no context
                 </text>
-                <text class="dg-mono-sm dg-danger" x="476" y="132" text-anchor="middle">
+                <text class="dg-mono-sm dg-danger" x="494" y="140" text-anchor="middle">
                   no context
                 </text>
-                <text class="dg-mono-sm dg-danger" x="648" y="132" text-anchor="middle">
+                <text class="dg-mono-sm dg-danger" x="666" y="140" text-anchor="middle">
                   no context
                 </text>
-                <text class="dg-mono-sm dg-danger" x="820" y="132" text-anchor="middle">
+                <text class="dg-mono-sm dg-danger" x="838" y="140" text-anchor="middle">
                   no context
                 </text>
-                <text class="dg-mono-sm dg-warn" x="924" y="132" text-anchor="middle">
+                <text class="dg-mono-sm dg-warn" x="924" y="140" text-anchor="middle">
                   no owner
                 </text>
               </g>
@@ -910,27 +922,44 @@
                 <rect class="dg-box-danger" x="1006" y="184" width="124" height="54" rx="8" />
                 <text class="dg-label-sm" x="1020" y="207">Pentest</text>
                 <text class="dg-cap" x="1020" y="225">Annual, PDF</text>
-                <path class="dg-line-broken" d="M 1068 238 L 1068 252" marker-end="url(#ah-danger)" />
               </g>
+
+              <!--
+                The pentest drop: box bottom (238) down toward the year-line
+                (268). The head stops short of the spike dot so the two read
+                as separate marks: an arrow pointing at one day in the year.
+              -->
+              <path
+                class="dg-line-broken"
+                d="M 1068 238 L 1068 256"
+                marker-end="url(#ah-danger)"
+              />
 
               <!-- Dashed connectors from the band up to their single host stage -->
               <g class="dg-rail" stroke-dasharray="3 4">
-                <path d="M 236 184 L 236 130" />
-                <path d="M 580 184 L 580 130" />
-                <path d="M 752 184 L 752 130" />
+                <path d="M 236 184 L 236 152" />
+                <path d="M 580 184 L 580 152" />
+                <path d="M 752 184 L 752 152" />
                 <!-- The pentest reaches past every stage — one sweep a year -->
-                <path d="M 1068 184 L 1068 130" />
-                <path class="dg-rail" d="M 0 238 L 1006 238" stroke-dasharray="2 6" opacity="0.5" />
+                <path d="M 1068 184 L 1068 152" />
               </g>
+              <path
+                class="dg-rail-faint"
+                d="M 0 238 L 1006 238"
+                stroke-dasharray="2 6"
+                opacity="0.55"
+              />
 
-              <!-- The calendar: one point in time per year -->
+              <!-- The calendar: one point in time per year.
+                   The rule runs the full width; the spike marks the single
+                   day that gets tested, sitting on the rule. -->
               <g>
-                <line class="dg-rail" x1="0" y1="262" x2="1130" y2="262" />
-                <circle cx="1068" cy="262" r="6" class="dg-spike" />
-                <text class="dg-mono-sm dg-danger" x="1068" y="284" text-anchor="middle">
+                <line class="dg-rail" x1="0" y1="274" x2="1130" y2="274" />
+                <circle cx="1068" cy="274" r="5.5" class="dg-spike" />
+                <text class="dg-mono-sm dg-danger" x="1068" y="294" text-anchor="middle">
                   one day a year
                 </text>
-                <text class="dg-mono-sm dg-faint" x="0" y="284">
+                <text class="dg-mono-sm dg-faint" x="0" y="294">
                   THE YEAR — one sweep, then the calendar resets
                 </text>
               </g>
@@ -950,62 +979,63 @@
               <text class="dg-cap" x="16" y="415">Every commit</text>
               <text class="dg-cap" x="16" y="429">Every deploy</text>
 
-              <!-- The agents -->
+              <!-- The agents. Gaps are 20 units so each arrowhead has a
+                   visible shaft and its tip lands on the next box's edge. -->
               <g>
-                <rect class="dg-box-accent" x="196" y="368" width="122" height="68" rx="10" />
-                <text class="dg-label-sm" x="210" y="394">Code review</text>
-                <text class="dg-mono-sm" x="210" y="412">retrieval</text>
+                <rect class="dg-box-accent" x="170" y="368" width="118" height="68" rx="10" />
+                <text class="dg-label-sm" x="184" y="394">Code review</text>
+                <text class="dg-mono-sm" x="184" y="412">retrieval</text>
 
-                <rect class="dg-box-accent" x="326" y="368" width="122" height="68" rx="10" />
-                <text class="dg-label-sm" x="340" y="394">Supply chain</text>
-                <text class="dg-mono-sm" x="340" y="412">advisory</text>
+                <rect class="dg-box-accent" x="308" y="368" width="118" height="68" rx="10" />
+                <text class="dg-label-sm" x="322" y="394">Supply chain</text>
+                <text class="dg-mono-sm" x="322" y="412">advisory</text>
 
-                <rect class="dg-box-accent" x="456" y="368" width="122" height="68" rx="10" />
-                <text class="dg-label-sm" x="470" y="394">White box</text>
-                <text class="dg-mono-sm" x="470" y="412">taint · sast</text>
+                <rect class="dg-box-accent" x="446" y="368" width="118" height="68" rx="10" />
+                <text class="dg-label-sm" x="460" y="394">White box</text>
+                <text class="dg-mono-sm" x="460" y="412">taint · sast</text>
 
-                <rect class="dg-box-accent" x="586" y="368" width="122" height="68" rx="10" />
-                <text class="dg-label-sm" x="600" y="394">Secrets</text>
-                <text class="dg-mono-sm" x="600" y="412">entropy</text>
+                <rect class="dg-box-accent" x="584" y="368" width="118" height="68" rx="10" />
+                <text class="dg-label-sm" x="598" y="394">Secrets</text>
+                <text class="dg-mono-sm" x="598" y="412">entropy</text>
 
-                <rect class="dg-box-accent" x="716" y="368" width="122" height="68" rx="10" />
-                <text class="dg-label-sm" x="730" y="394">Malware</text>
-                <text class="dg-mono-sm" x="730" y="412">yara</text>
+                <rect class="dg-box-accent" x="722" y="368" width="118" height="68" rx="10" />
+                <text class="dg-label-sm" x="736" y="394">Malware</text>
+                <text class="dg-mono-sm" x="736" y="412">yara</text>
 
-                <rect class="dg-box-accent" x="846" y="368" width="122" height="68" rx="10" />
-                <text class="dg-label-sm" x="860" y="394">Network</text>
-                <text class="dg-mono-sm" x="860" y="412">ssrf · tls</text>
+                <rect class="dg-box-accent" x="860" y="368" width="118" height="68" rx="10" />
+                <text class="dg-label-sm" x="874" y="394">Network</text>
+                <text class="dg-mono-sm" x="874" y="412">ssrf · tls</text>
 
-                <rect class="dg-box-accent" x="976" y="368" width="154" height="68" rx="10" />
-                <text class="dg-label-sm" x="990" y="394">Black box</text>
-                <text class="dg-mono-sm" x="990" y="412">live deployed URL</text>
+                <rect class="dg-box-accent" x="998" y="368" width="132" height="68" rx="10" />
+                <text class="dg-label-sm" x="1012" y="394">Black box</text>
+                <text class="dg-mono-sm" x="1012" y="412">live deployed URL</text>
               </g>
 
               <!-- The continuous rail through every agent -->
-              <path
-                class="dg-line-accent"
-                d="M 150 402 L 196 402"
-                marker-end="url(#ah-accent)"
-              />
               <g class="dg-line-accent" marker-end="url(#ah-accent)">
-                <path d="M 318 402 L 326 402" />
-                <path d="M 448 402 L 456 402" />
-                <path d="M 578 402 L 586 402" />
-                <path d="M 708 402 L 716 402" />
-                <path d="M 838 402 L 846 402" />
-                <path d="M 968 402 L 976 402" />
+                <path d="M 150 402 L 170 402" />
+                <path d="M 288 402 L 308 402" />
+                <path d="M 426 402 L 446 402" />
+                <path d="M 564 402 L 584 402" />
+                <path d="M 702 402 L 722 402" />
+                <path d="M 840 402 L 860 402" />
+                <path d="M 978 402 L 998 402" />
               </g>
 
-              <!-- Return loop — findings feed the next commit -->
+              <!-- Return loop — findings feed the next commit.
+                   Drops from the Black box bottom (436) to the return rail
+                   (452), runs left and rises to the Trigger box's bottom
+                   edge (436). The head tip stops on that edge so it does not
+                   punch through the box. -->
               <path
                 class="dg-line-accent"
-                d="M 1053 436 L 1053 458 L 75 458 L 75 436"
+                d="M 1064 436 L 1064 452 L 75 452 L 75 436"
                 marker-end="url(#ah-accent)"
               />
               <text
                 class="dg-mono-sm dg-accent"
-                x="564"
-                y="470"
+                x="602"
+                y="466"
                 text-anchor="middle"
               >
                 findings become the next commit's input — the loop closes
