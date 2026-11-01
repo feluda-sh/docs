@@ -542,11 +542,216 @@
           </div>
         </section>
 
+<!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 5 — FELUDA-1.0 (THE MODEL)
+             Layout: a left statement column against a right three-row
+             differentiator stack, with the CyberGym score as a metric rail
+             underneath.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide" data-slide="5" aria-label="Feluda-1.0 the model">
+          <div class="grid-bg absolute inset-0"></div>
+          <div class="ghost-num">05</div>
+
+          <div class="relative flex h-full flex-col">
+            <div class="reveal">
+              <div class="mb-4 flex items-center gap-4">
+                <p class="eyebrow">The Model</p>
+                <span class="pill pill-accent">Feluda-1.0</span>
+                <span class="pill pill-accent">open-access cyber model</span>
+              </div>
+              <h2 class="h-slide max-w-4xl">
+                The open-access cyber model that runs what others refuse
+              </h2>
+              <p class="p-lead mt-3 max-w-3xl">
+                Democratizing offensive cyber for better defence. Feluda-1.0 is a
+                security-specialised, self-hosted AI model built by compressing and
+                evaluating the existing GLM-5.3-Flash base — powering Feluda's code
+                review, vulnerability investigation and repair workflows.
+              </p>
+            </div>
+
+            <!-- The headline claim -->
+            <div class="reveal card-accent mt-6 flex items-center gap-6 p-4">
+              <span class="pill pill-danger shrink-0">No refusals</span>
+              <p class="p-body text-ink">
+                Feluda-1.0 runs tasks that other models refuse — completing the
+                offensive work end to end, inside your own infrastructure.
+              </p>
+            </div>
+
+            <!-- Three differentiators -->
+            <div class="reveal mt-6 grid flex-1 grid-cols-3 gap-10">
+              <div class="flex flex-col">
+                <div class="rule-accent mb-4"></div>
+                <h3 class="h-sub mb-3">Cybersecurity-first workflows</h3>
+                <p class="p-body">
+                  Prioritise repository understanding, evidence-backed vulnerability
+                  findings, code-level fixes and agent/tool coordination.
+                </p>
+              </div>
+
+              <div class="flex flex-col">
+                <div class="rule-accent mb-4"></div>
+                <h3 class="h-sub mb-3">CyberGym-grounded quality</h3>
+                <p class="p-body">
+                  Use repeatable vulnerability-repair tasks rather than assuming
+                  generic reasoning scores predict security outcomes.
+                </p>
+              </div>
+
+              <div class="flex flex-col">
+                <div class="rule-accent mb-4"></div>
+                <h3 class="h-sub mb-3">Sovereign Ascend inference</h3>
+                <p class="p-body">
+                  Runs on the organisation's Huawei cluster through vLLM-Ascend —
+                  instead of requiring an external model provider.
+                </p>
+              </div>
+            </div>
+
+            <!-- Metric rail -->
+            <div class="reveal stat-band mt-6 grid-cols-3">
+              <div>
+                <div class="kpi-num">82.34%</div>
+                <div class="kpi-cap">CyberGym</div>
+                <p class="p-body mt-2">
+                  Measured on repeatable vulnerability-repair tasks — the same
+                  benchmark used to qualify frontier offensive models.
+                </p>
+              </div>
+              <div>
+                <div class="kpi-num">~310<span class="text-[0.55em]"> GB</span></div>
+                <div class="kpi-cap">GLM-5.3-Flash W8A8 base</div>
+                <p class="p-body mt-2">
+                  The starting checkpoint — compressed and calibrated into the
+                  Feluda-1.0 weights.
+                </p>
+              </div>
+              <div>
+                <div class="kpi-num text-ink">Self-hosted</div>
+                <div class="kpi-cap">Inference</div>
+                <p class="p-body mt-2">
+                  Repository context and inference stay inside controlled
+                  infrastructure. Nothing is sent to an external provider.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Feluda-1.0</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">05</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 6 — DEVELOPMENT PATH
+             Layout: a horizontal pipeline of four stations, with the
+             "renaming is not a model" caveat called out beneath it.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide" data-slide="6" aria-label="Feluda-1.0 development path">
+          <div class="ghost-num">06</div>
+
+          <div class="relative flex h-full flex-col">
+            <div class="reveal">
+              <div class="mb-4 flex items-center gap-4">
+                <p class="eyebrow">Model Development Path</p>
+                <span class="pill pill-accent">Feluda-1.0</span>
+              </div>
+              <h2 class="h-slide max-w-4xl">How Feluda-1.0 was built</h2>
+              <p class="p-lead mt-3 max-w-3xl">
+                A four-stage path from a general base to a distinct security
+                checkpoint — each stage gated on measured fidelity, not intent.
+              </p>
+            </div>
+
+            <!-- Pipeline -->
+            <div class="reveal mt-9 grid flex-1 grid-cols-4 gap-6">
+              <!-- Stage 1 -->
+              <div class="flex flex-col">
+                <div class="mb-4 flex items-center gap-3">
+                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[color:var(--edge)] font-mono text-[11px] text-ink-muted">
+                    01
+                  </span>
+                  <span class="tag">Base</span>
+                </div>
+                <h3 class="h-sub mb-3">Existing GLM-5.3-Flash W8A8</h3>
+                <p class="p-body">
+                  ~310 GB. The general-purpose starting point, already
+                  quantized for efficient serving.
+                </p>
+              </div>
+
+              <!-- Stage 2 -->
+              <div class="flex flex-col">
+                <div class="mb-4 flex items-center gap-3">
+                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[color:var(--edge)] font-mono text-[11px] text-ink-muted">
+                    02
+                  </span>
+                  <span class="tag">Test</span>
+                </div>
+                <h3 class="h-sub mb-3">Pruning, quantization, calibration</h3>
+                <p class="p-body">
+                  Test compression strategies against the base to find the
+                  smallest checkpoint that keeps security behaviour intact.
+                </p>
+              </div>
+
+              <!-- Stage 3 -->
+              <div class="flex flex-col">
+                <div class="mb-4 flex items-center gap-3">
+                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[color:var(--edge)] font-mono text-[11px] text-ink-muted">
+                    03
+                  </span>
+                  <span class="tag">Validate</span>
+                </div>
+                <h3 class="h-sub mb-3">Reasoning &amp; tool-use fidelity</h3>
+                <p class="p-body">
+                  Validate that the compressed model still reasons correctly and
+                  still drives tools the way the workflows require.
+                </p>
+              </div>
+
+              <!-- Stage 4 -->
+              <div class="flex flex-col">
+                <div class="mb-4 flex items-center gap-3">
+                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[color:var(--ac-edge)] font-mono text-[11px] text-accent">
+                    04
+                  </span>
+                  <span class="tag tag-accent">Publish</span>
+                </div>
+                <h3 class="h-sub mb-3">Security-tune, then publish</h3>
+                <p class="p-body">
+                  A distinct Feluda-1.0 checkpoint — named, versioned and
+                  measurable on its own terms.
+                </p>
+              </div>
+            </div>
+
+            <!-- The caveat -->
+            <div class="reveal card-accent mt-8 flex items-center gap-6 p-5">
+              <span class="pill pill-danger shrink-0">The line</span>
+              <p class="p-body text-ink">
+                Merely changing the served-model name does not produce a new
+                model. Feluda-1.0 is a distinct checkpoint, earned by measurement.
+              </p>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Feluda-1.0 · Path</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">06</span>
+          </div>
+        </section>
+
+
         <!-- ═══════════════════════════════════════════════════════════════
              SLIDE 5 — THE GAP (SDLC / ADLC vs. FELUDA) — DIAGRAM
              Layout: full-bleed schematic with a ruled annotation column.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide dense" data-slide="5" aria-label="The gap in SDLC and ADLC">
+        <section class="slide dense" data-slide="7" aria-label="The gap in SDLC and ADLC">
           <div class="reveal">
             <p class="eyebrow mb-3">The gap</p>
             <h2 class="h-slide max-w-4xl">
@@ -838,7 +1043,7 @@
           <div class="deck-footer">
             <span class="chap">The Gap</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">05</span>
+            <span class="slide-num">07</span>
           </div>
         </section>
 
@@ -847,8 +1052,8 @@
              Layout: full-bleed matrix, no card wrapper. The Feluda column
              is washed, not boxed.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide" data-slide="6" aria-label="Comparison table">
-          <div class="ghost-num">06</div>
+        <section class="slide" data-slide="8" aria-label="Comparison table">
+          <div class="ghost-num">08</div>
 
           <div class="reveal">
             <p class="eyebrow mb-4">Differentiated</p>
@@ -944,7 +1149,7 @@
           <div class="deck-footer">
             <span class="chap">Differentiation</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">06</span>
+            <span class="slide-num">08</span>
           </div>
         </section>
 
@@ -953,8 +1158,8 @@
              Layout: a two-sided ruled contrast. Left is what the incumbent
              scanner suites do well; right is what they structurally cannot.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide dense" data-slide="7" aria-label="Versus other existing systems">
-          <div class="ghost-num">07</div>
+        <section class="slide dense" data-slide="9" aria-label="Versus other existing systems">
+          <div class="ghost-num">09</div>
 
           <div class="reveal">
             <div class="mb-4 flex items-center gap-4">
@@ -1058,7 +1263,7 @@
           <div class="deck-footer">
             <span class="chap">Differentiation</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">07</span>
+            <span class="slide-num">09</span>
           </div>
         </section>
 
@@ -1066,7 +1271,7 @@
              SLIDE 8 — COVERAGE OVER TIME — DIAGRAM
              Layout: full-bleed chart over a ruled annotation rail.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide dense" data-slide="8" aria-label="Coverage over time">
+        <section class="slide dense" data-slide="10" aria-label="Coverage over time">
           <div class="reveal">
             <p class="eyebrow mb-3">Why the calendar fails</p>
             <h2 class="h-slide max-w-4xl">
@@ -1247,7 +1452,7 @@
           <div class="deck-footer">
             <span class="chap">Coverage</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">08</span>
+            <span class="slide-num">10</span>
           </div>
         </section>
 
@@ -1256,9 +1461,9 @@
              Layout: a horizontal flow with an arrow spine; the agent fan-out
              rendered as a vertical stack of chips.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide" data-slide="9" aria-label="How a change gets reviewed">
+        <section class="slide" data-slide="11" aria-label="How a change gets reviewed">
           <div class="grid-bg absolute inset-0"></div>
-          <div class="ghost-num">09</div>
+          <div class="ghost-num">11</div>
 
           <div class="relative reveal flex h-full flex-col">
             <p class="eyebrow mb-4">How It Works</p>
@@ -1356,7 +1561,7 @@
           <div class="deck-footer">
             <span class="chap">Architecture</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">09</span>
+            <span class="slide-num">11</span>
           </div>
         </section>
 
@@ -1365,8 +1570,8 @@
              Layout: asymmetric 46/54. Left is a live terminal mock; right is
              a ruled output list.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide dense" data-slide="10" aria-label="Code review core">
-          <div class="ghost-num">10</div>
+        <section class="slide dense" data-slide="12" aria-label="Code review core">
+          <div class="ghost-num">12</div>
 
           <div class="reveal">
             <p class="eyebrow mb-4">Part One</p>
@@ -1488,7 +1693,7 @@
           <div class="deck-footer">
             <span class="chap">Code Review</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">10</span>
+            <span class="slide-num">12</span>
           </div>
         </section>
 
@@ -1497,8 +1702,8 @@
              Layout: three staggered horizontal lanes, each offset from the
              last — a descending staircase rather than a card row.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide" data-slide="11" aria-label="SAST, secrets, code quality">
-          <div class="ghost-num">11</div>
+        <section class="slide" data-slide="13" aria-label="SAST, secrets, code quality">
+          <div class="ghost-num">13</div>
 
           <div class="reveal">
             <p class="eyebrow mb-4">Foundations</p>
@@ -1589,7 +1794,7 @@
           <div class="deck-footer">
             <span class="chap">Foundations</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">11</span>
+            <span class="slide-num">13</span>
           </div>
         </section>
 
@@ -1598,9 +1803,9 @@
              Layout: an asymmetric bento — one wide live-target panel, five
              diff agents in a tight ruled column.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide" data-slide="12" aria-label="Six security agents">
+        <section class="slide" data-slide="14" aria-label="Six security agents">
           <div class="grid-bg absolute inset-0"></div>
-          <div class="ghost-num">12</div>
+          <div class="ghost-num">14</div>
 
           <div class="relative reveal flex h-full flex-col">
             <p class="eyebrow mb-4">Part Two</p>
@@ -1700,7 +1905,7 @@
           <div class="deck-footer">
             <span class="chap">Security Agents</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">12</span>
+            <span class="slide-num">14</span>
           </div>
         </section>
 
@@ -1709,8 +1914,8 @@
              Layout: a 3×3 hairline matrix — nine capabilities as cells in a grid
              ruled by lines, with the taint model as a footer note.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide dense" data-slide="13" aria-label="White box V1">
-          <div class="ghost-num">13</div>
+        <section class="slide dense" data-slide="15" aria-label="White box V1">
+          <div class="ghost-num">15</div>
 
           <div class="reveal">
             <div class="mb-4 flex items-center gap-4">
@@ -1807,7 +2012,7 @@
           <div class="deck-footer">
             <span class="chap">White Box · V1</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">13</span>
+            <span class="slide-num">15</span>
           </div>
         </section>
 
@@ -1816,8 +2021,8 @@
              Layout: asymmetric split. Left is a ruled hunt-list; right is a
              terminal-style companion panel.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide dense" data-slide="14" aria-label="White box V2 API security">
-          <div class="ghost-num">14</div>
+        <section class="slide dense" data-slide="16" aria-label="White box V2 API security">
+          <div class="ghost-num">16</div>
 
           <div class="reveal">
             <div class="mb-4 flex items-center gap-4">
@@ -1895,7 +2100,7 @@
           <div class="deck-footer">
             <span class="chap">White Box · V2 · API</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">14</span>
+            <span class="slide-num">16</span>
           </div>
         </section>
 
@@ -1904,8 +2109,8 @@
              Layout: a four-column catalogue rendered as ruled columns with
              staggered vertical offsets — a hanging list, not a card row.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide dense" data-slide="15" aria-label="White box V2 web application security">
-          <div class="ghost-num">15</div>
+        <section class="slide dense" data-slide="17" aria-label="White box V2 web application security">
+          <div class="ghost-num">17</div>
 
           <div class="reveal">
             <div class="mb-4 flex items-center gap-4">
@@ -1995,7 +2200,7 @@
           <div class="deck-footer">
             <span class="chap">White Box · V2 · Web App</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">15</span>
+            <span class="slide-num">17</span>
           </div>
         </section>
 
@@ -2004,8 +2209,8 @@
              Layout: a dense 4×2 hairline matrix on the left, a single
              tall accent panel on the right — a bento pair.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide dense" data-slide="16" aria-label="White box V2 cryptography and RASP">
-          <div class="ghost-num">16</div>
+        <section class="slide dense" data-slide="18" aria-label="White box V2 cryptography and RASP">
+          <div class="ghost-num">18</div>
 
           <div class="reveal">
             <div class="mb-4 flex items-center gap-4">
@@ -2093,7 +2298,7 @@
           <div class="deck-footer">
             <span class="chap">White Box · V2 · Crypto</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">16</span>
+            <span class="slide-num">18</span>
           </div>
         </section>
 
@@ -2102,8 +2307,8 @@
              Layout: a four-station horizontal line, each station a ruled
              column hanging beneath a shared axis.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide" data-slide="17" aria-label="White box V3 pipeline scanning">
-          <div class="ghost-num">17</div>
+        <section class="slide" data-slide="19" aria-label="White box V3 pipeline scanning">
+          <div class="ghost-num">19</div>
 
           <div class="reveal">
             <div class="mb-4 flex items-center gap-4">
@@ -2200,7 +2405,7 @@
           <div class="deck-footer">
             <span class="chap">White Box · V3</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">17</span>
+            <span class="slide-num">19</span>
           </div>
         </section>
 
@@ -2209,13 +2414,13 @@
              Layout: an ATT&CK-style ladder — four ascending columns of
              tactics, each column a ruled vertical list.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide dense" data-slide="18" aria-label="White box V4 red team"
+        <section class="slide dense" data-slide="20" aria-label="White box V4 red team"
           style="--slide-accent: var(--danger)">
           <div
             class="bloom"
             style="width: 520px; height: 520px; top: 40px; right: -190px; opacity: 0.08"
           ></div>
-          <div class="ghost-num">18</div>
+          <div class="ghost-num">20</div>
 
           <div class="relative reveal flex h-full flex-col">
             <div class="mb-4 flex items-center gap-4">
@@ -2303,7 +2508,7 @@
           <div class="deck-footer">
             <span class="chap">White Box · V4 · Red Team</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">18</span>
+            <span class="slide-num">20</span>
           </div>
         </section>
 
@@ -2312,8 +2517,8 @@
              Layout: a catalogue strip across the top, then an asymmetric
              bottom pair — one dominant panel, one secondary.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide dense" data-slide="19" aria-label="White box V4 penetration testing">
-          <div class="ghost-num">19</div>
+        <section class="slide dense" data-slide="21" aria-label="White box V4 penetration testing">
+          <div class="ghost-num">21</div>
 
           <div class="reveal">
             <div class="mb-4 flex items-center gap-4">
@@ -2401,7 +2606,7 @@
           <div class="deck-footer">
             <span class="chap">White Box · V4 · Pentest</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">19</span>
+            <span class="slide-num">21</span>
           </div>
         </section>
 
@@ -2410,8 +2615,8 @@
              Layout: a hard split — the black-box side renders as a live
              request log; the DAST side as a session timeline.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide dense" data-slide="20" aria-label="Black box testing and authenticated DAST">
-          <div class="ghost-num">20</div>
+        <section class="slide dense" data-slide="22" aria-label="Black box testing and authenticated DAST">
+          <div class="ghost-num">22</div>
 
           <div class="reveal">
             <p class="eyebrow mb-4">Dynamic Testing</p>
@@ -2502,7 +2707,7 @@
           <div class="deck-footer">
             <span class="chap">Dynamic Testing</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">20</span>
+            <span class="slide-num">22</span>
           </div>
         </section>
 
@@ -2511,8 +2716,8 @@
              Layout: a three-column ruled register with a wide footer band —
              content grouped by rules, never by boxes.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide dense" data-slide="21" aria-label="Supply chain and dependencies">
-          <div class="ghost-num">21</div>
+        <section class="slide dense" data-slide="23" aria-label="Supply chain and dependencies">
+          <div class="ghost-num">23</div>
 
           <div class="reveal">
             <div class="eyebrow mb-4">Supply Chain</div>
@@ -2596,7 +2801,7 @@
           <div class="deck-footer">
             <span class="chap">Supply Chain</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">21</span>
+            <span class="slide-num">23</span>
           </div>
         </section>
 
@@ -2605,9 +2810,9 @@
              Layout: a three-beat horizontal narrative with a connecting
              spine, over a two-column ruled foundation.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide" data-slide="22" aria-label="Runtime protection and audit">
+        <section class="slide" data-slide="24" aria-label="Runtime protection and audit">
           <div class="grid-bg absolute inset-0"></div>
-          <div class="ghost-num">22</div>
+          <div class="ghost-num">24</div>
 
           <div class="relative reveal flex h-full flex-col">
             <p class="eyebrow mb-4">Continuous Protection</p>
@@ -2695,7 +2900,7 @@
           <div class="deck-footer">
             <span class="chap">Runtime Protection</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">22</span>
+            <span class="slide-num">24</span>
           </div>
         </section>
 
@@ -2704,8 +2909,8 @@
              Layout: two narrative panels above, then a horizontal worker
              strip rendered as a labelled table.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide" data-slide="23" aria-label="Platform and forges">
-          <div class="ghost-num">23</div>
+        <section class="slide" data-slide="25" aria-label="Platform and forges">
+          <div class="ghost-num">25</div>
 
           <div class="reveal">
             <p class="eyebrow mb-4">Platform</p>
@@ -2781,7 +2986,7 @@
           <div class="deck-footer">
             <span class="chap">Platform</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">23</span>
+            <span class="slide-num">25</span>
           </div>
         </section>
 
@@ -2790,8 +2995,8 @@
              Layout: a full-width terminal hero on the left, three numbered
              ingress points stacked on the right.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide" data-slide="24" aria-label="CLI and developer workflow">
-          <div class="ghost-num">24</div>
+        <section class="slide" data-slide="26" aria-label="CLI and developer workflow">
+          <div class="ghost-num">26</div>
 
           <div class="reveal">
             <p class="eyebrow mb-4">Developer Experience</p>
@@ -2876,7 +3081,7 @@
           <div class="deck-footer">
             <span class="chap">Developer Experience</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">24</span>
+            <span class="slide-num">26</span>
           </div>
         </section>
 
@@ -2885,9 +3090,9 @@
              Layout: five vertical capability columns hanging from one
              axis, over an oversized metric band.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide" data-slide="25" aria-label="Complete capability map">
+        <section class="slide" data-slide="27" aria-label="Complete capability map">
           <div class="grid-bg absolute inset-0"></div>
-          <div class="ghost-num">25</div>
+          <div class="ghost-num">27</div>
 
           <div class="relative reveal flex h-full flex-col">
             <p class="eyebrow mb-4">Coverage</p>
@@ -2982,7 +3187,7 @@
           <div class="deck-footer">
             <span class="chap">Coverage</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">25</span>
+            <span class="slide-num">27</span>
           </div>
         </section>
 
@@ -2991,8 +3196,8 @@
              Layout: three status columns, each led by a state marker —
              live, next, open — with the open column carrying a caveat.
              ═══════════════════════════════════════════════════════════ -->
-        <section class="slide" data-slide="26" aria-label="Current state and roadmap">
-          <div class="ghost-num">26</div>
+        <section class="slide" data-slide="28" aria-label="Current state and roadmap">
+          <div class="ghost-num">28</div>
 
           <div class="reveal">
             <p class="eyebrow mb-4">Roadmap</p>
@@ -3072,213 +3277,11 @@
           <div class="deck-footer">
             <span class="chap">Roadmap</span>
             <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">26</span>
-          </div>
-        </section>
-
-        <!-- ═══════════════════════════════════════════════════════════════
-             SLIDE 27 — FELUDA-1.0 (THE MODEL)
-             Layout: a left statement column against a right three-row
-             differentiator stack, with the CyberGym score as a metric rail
-             underneath.
-             ═══════════════════════════════════════════════════════════ -->
-        <section class="slide" data-slide="27" aria-label="Feluda-1.0 the model">
-          <div class="grid-bg absolute inset-0"></div>
-          <div class="ghost-num">27</div>
-
-          <div class="relative flex h-full flex-col">
-            <div class="reveal">
-              <div class="mb-4 flex items-center gap-4">
-                <p class="eyebrow">The Model</p>
-                <span class="pill pill-accent">Feluda-1.0</span>
-                <span class="pill pill-accent">open-access cyber model</span>
-              </div>
-              <h2 class="h-slide max-w-4xl">
-                The open-access cyber model that runs what others refuse
-              </h2>
-              <p class="p-lead mt-3 max-w-3xl">
-                Democratizing offensive cyber for better defence. Feluda-1.0 is a
-                security-specialised, self-hosted AI model built by compressing and
-                evaluating the existing GLM-5.3-Flash base — powering Feluda's code
-                review, vulnerability investigation and repair workflows.
-              </p>
-            </div>
-
-            <!-- The headline claim -->
-            <div class="reveal card-accent mt-6 flex items-center gap-6 p-4">
-              <span class="pill pill-danger shrink-0">No refusals</span>
-              <p class="p-body text-ink">
-                Feluda-1.0 runs tasks that other models refuse — completing the
-                offensive work end to end, inside your own infrastructure.
-              </p>
-            </div>
-
-            <!-- Three differentiators -->
-            <div class="reveal mt-6 grid flex-1 grid-cols-3 gap-10">
-              <div class="flex flex-col">
-                <div class="rule-accent mb-4"></div>
-                <h3 class="h-sub mb-3">Cybersecurity-first workflows</h3>
-                <p class="p-body">
-                  Prioritise repository understanding, evidence-backed vulnerability
-                  findings, code-level fixes and agent/tool coordination.
-                </p>
-              </div>
-
-              <div class="flex flex-col">
-                <div class="rule-accent mb-4"></div>
-                <h3 class="h-sub mb-3">CyberGym-grounded quality</h3>
-                <p class="p-body">
-                  Use repeatable vulnerability-repair tasks rather than assuming
-                  generic reasoning scores predict security outcomes.
-                </p>
-              </div>
-
-              <div class="flex flex-col">
-                <div class="rule-accent mb-4"></div>
-                <h3 class="h-sub mb-3">Sovereign Ascend inference</h3>
-                <p class="p-body">
-                  Runs on the organisation's Huawei cluster through vLLM-Ascend —
-                  instead of requiring an external model provider.
-                </p>
-              </div>
-            </div>
-
-            <!-- Metric rail -->
-            <div class="reveal stat-band mt-6 grid-cols-3">
-              <div>
-                <div class="kpi-num">82.34%</div>
-                <div class="kpi-cap">CyberGym</div>
-                <p class="p-body mt-2">
-                  Measured on repeatable vulnerability-repair tasks — the same
-                  benchmark used to qualify frontier offensive models.
-                </p>
-              </div>
-              <div>
-                <div class="kpi-num">~310<span class="text-[0.55em]"> GB</span></div>
-                <div class="kpi-cap">GLM-5.3-Flash W8A8 base</div>
-                <p class="p-body mt-2">
-                  The starting checkpoint — compressed and calibrated into the
-                  Feluda-1.0 weights.
-                </p>
-              </div>
-              <div>
-                <div class="kpi-num text-ink">Self-hosted</div>
-                <div class="kpi-cap">Inference</div>
-                <p class="p-body mt-2">
-                  Repository context and inference stay inside controlled
-                  infrastructure. Nothing is sent to an external provider.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="deck-footer">
-            <span class="chap">Feluda-1.0</span>
-            <div class="track"><div class="fill"></div></div>
-            <span class="slide-num">27</span>
-          </div>
-        </section>
-
-        <!-- ═══════════════════════════════════════════════════════════════
-             SLIDE 28 — DEVELOPMENT PATH
-             Layout: a horizontal pipeline of four stations, with the
-             "renaming is not a model" caveat called out beneath it.
-             ═══════════════════════════════════════════════════════════ -->
-        <section class="slide" data-slide="28" aria-label="Feluda-1.0 development path">
-          <div class="ghost-num">28</div>
-
-          <div class="relative flex h-full flex-col">
-            <div class="reveal">
-              <div class="mb-4 flex items-center gap-4">
-                <p class="eyebrow">Model Development Path</p>
-                <span class="pill pill-accent">Feluda-1.0</span>
-              </div>
-              <h2 class="h-slide max-w-4xl">How Feluda-1.0 was built</h2>
-              <p class="p-lead mt-3 max-w-3xl">
-                A four-stage path from a general base to a distinct security
-                checkpoint — each stage gated on measured fidelity, not intent.
-              </p>
-            </div>
-
-            <!-- Pipeline -->
-            <div class="reveal mt-9 grid flex-1 grid-cols-4 gap-6">
-              <!-- Stage 1 -->
-              <div class="flex flex-col">
-                <div class="mb-4 flex items-center gap-3">
-                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[color:var(--edge)] font-mono text-[11px] text-ink-muted">
-                    01
-                  </span>
-                  <span class="tag">Base</span>
-                </div>
-                <h3 class="h-sub mb-3">Existing GLM-5.3-Flash W8A8</h3>
-                <p class="p-body">
-                  ~310 GB. The general-purpose starting point, already
-                  quantized for efficient serving.
-                </p>
-              </div>
-
-              <!-- Stage 2 -->
-              <div class="flex flex-col">
-                <div class="mb-4 flex items-center gap-3">
-                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[color:var(--edge)] font-mono text-[11px] text-ink-muted">
-                    02
-                  </span>
-                  <span class="tag">Test</span>
-                </div>
-                <h3 class="h-sub mb-3">Pruning, quantization, calibration</h3>
-                <p class="p-body">
-                  Test compression strategies against the base to find the
-                  smallest checkpoint that keeps security behaviour intact.
-                </p>
-              </div>
-
-              <!-- Stage 3 -->
-              <div class="flex flex-col">
-                <div class="mb-4 flex items-center gap-3">
-                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[color:var(--edge)] font-mono text-[11px] text-ink-muted">
-                    03
-                  </span>
-                  <span class="tag">Validate</span>
-                </div>
-                <h3 class="h-sub mb-3">Reasoning &amp; tool-use fidelity</h3>
-                <p class="p-body">
-                  Validate that the compressed model still reasons correctly and
-                  still drives tools the way the workflows require.
-                </p>
-              </div>
-
-              <!-- Stage 4 -->
-              <div class="flex flex-col">
-                <div class="mb-4 flex items-center gap-3">
-                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[color:var(--ac-edge)] font-mono text-[11px] text-accent">
-                    04
-                  </span>
-                  <span class="tag tag-accent">Publish</span>
-                </div>
-                <h3 class="h-sub mb-3">Security-tune, then publish</h3>
-                <p class="p-body">
-                  A distinct Feluda-1.0 checkpoint — named, versioned and
-                  measurable on its own terms.
-                </p>
-              </div>
-            </div>
-
-            <!-- The caveat -->
-            <div class="reveal card-accent mt-8 flex items-center gap-6 p-5">
-              <span class="pill pill-danger shrink-0">The line</span>
-              <p class="p-body text-ink">
-                Merely changing the served-model name does not produce a new
-                model. Feluda-1.0 is a distinct checkpoint, earned by measurement.
-              </p>
-            </div>
-          </div>
-
-          <div class="deck-footer">
-            <span class="chap">Feluda-1.0 · Path</span>
-            <div class="track"><div class="fill"></div></div>
             <span class="slide-num">28</span>
           </div>
         </section>
+
+        
 
         <!-- ═══════════════════════════════════════════════════════════════
              SLIDE 29 — CLOSING
