@@ -1,0 +1,1133 @@
+/* ============================================================================
+   FELUDA SLIDE DECK — THEME
+   ----------------------------------------------------------------------------
+   SINGLE SOURCE OF TRUTH for every visual decision in the deck.
+
+   The deck is a fixed 1280×720 canvas scaled with a transform. Every size in
+   this file is therefore a FIXED pixel value — fluid `vw` units would resolve
+   against the browser viewport while the canvas scales independently, so the
+   typography would drift out of proportion with the layout on any window
+   that is not exactly 1280px wide.
+
+   HOW THE THEME IS WIRED
+     1. Tokens live in :root as CSS custom properties.
+     2. Tailwind utilities in index.html read them via bracket syntax,
+        e.g. bg-[color:var(--surface-1)] text-[color:var(--ink)].
+     3. Semantic Tailwind colour aliases are registered in the inline @theme
+        block in index.html. The `slide` alias resolves to --ac, the PER-SLIDE
+        accent, so one slide can re-tint every component with a single
+        inline `--slide-accent` declaration on its <section>.
+     4. Component-level primitives live at the bottom of this file.
+
+   TOKENS ARE GROUPED
+     §1 Surface      — background layers
+     §2 Ink          — text hierarchy
+     §3 Accent       — brand lilac + semantic state colours
+     §4 Edge         — borders and separators
+     §5 Type         — font families and the fixed size scale
+     §6 Space        — spacing rhythm
+     §7 Shape        — radii
+     §8 Elevation    — shadows
+     §9 Motion       — durations, easings, stagger unit
+     §10 Scale       — deck geometry (slide size, safe area)
+   ========================================================================== */
+
+/* ──────────────────────────────────────────────────────────────────────────
+   §1 SURFACE — olive charcoal, four depth layers
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  --surface-0: #0c0d0b; /* deepest — letterbox behind the deck */
+  --surface-1: #131411; /* base slide plane */
+  --surface-2: #191b16; /* raised surface */
+  --surface-3: #21241d; /* nested chip / hover */
+  --surface-input: #0c0d0b;
+  --surface-scrim: rgba(12, 13, 11, 0.86);
+  --glass: rgba(255, 255, 255, 0.035);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   §2 INK — text hierarchy
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  --ink: #f0efe7; /* primary */
+  --ink-soft: #b7baae; /* secondary body */
+  --ink-muted: #979b8d; /* tertiary / captions */
+  --ink-faint: #6b6f63; /* de-emphasised, axis labels */
+  --ink-inverse: #0c0d0b; /* text on an accent fill */
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   §3 ACCENT — brand lilac, plus semantic state colours
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  --accent: #adb1f5;
+  --accent-strong: #c7caff;
+  --accent-dim: #23243f;
+  --accent-ink: #23243f;
+
+  --danger: #f2544b;
+  --warn: #d99a2b;
+  --info: #5b9cf7;
+  --success: #43b558;
+
+  /* Per-slide accent. A slide sets `--slide-accent` inline; everything
+     below derives its soft fill / edge from it so one declaration
+     re-tints the whole slide. */
+  --slide-accent: var(--accent);
+  --ac: var(--accent);
+
+  /* Backwards-compatible aliases for the brand accent. */
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
+  --accent-edge: color-mix(in srgb, var(--accent) 36%, transparent);
+  --accent-glow: color-mix(in srgb, var(--accent) 14%, transparent);
+  --ac-soft: color-mix(in srgb, var(--ac) 12%, transparent);
+  --ac-edge: color-mix(in srgb, var(--ac) 36%, transparent);
+  --ac-faint: color-mix(in srgb, var(--ac) 6%, transparent);
+  --ac-glow: color-mix(in srgb, var(--ac) 14%, transparent);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   §4 EDGE — borders and separators
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  --edge: #313429;
+  --edge-subtle: rgba(49, 52, 41, 0.55);
+  --edge-strong: #474b3d;
+  --hair: rgba(255, 255, 255, 0.07);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   §5 TYPE — families + fixed size scale (canvas is 1280×720)
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  --font-sans: "Geist", "Inter Tight", ui-sans-serif, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SF Mono", Menlo,
+    monospace;
+
+  --fs-display: 62px;
+  --fs-title: 40px;
+  --fs-heading: 22px;
+  --fs-lead: 16.5px;
+  --fs-body: 13.5px;
+  --fs-small: 12px;
+  --fs-eyebrow: 10px;
+  --fs-kpi: 46px;
+  --fs-mono: 10.5px;
+  --fs-ghost: 128px;
+
+  --lh-tight: 1.06;
+  --lh-snug: 1.26;
+  --lh-body: 1.55;
+  --ls-eyebrow: 0.15em;
+  --ls-display: -0.028em;
+  --ls-mono: 0.02em;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   §6 SPACE — 4px base rhythm
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 44px;
+  --space-8: 64px;
+  --space-9: 96px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   §7 SHAPE
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  --radius-sm: 5px;
+  --radius: 8px;
+  --radius-card: 13px;
+  --radius-lg: 20px;
+  --radius-pill: 9999px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   §8 ELEVATION — diffuse, tinted with the surface hue. No neon glows.
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  --shadow-1: 0 1px 0 rgba(255, 255, 255, 0.035) inset,
+    0 2px 10px rgba(0, 0, 0, 0.34);
+  --shadow-2: 0 14px 34px rgba(0, 0, 0, 0.42);
+  --shadow-3: 0 30px 70px rgba(0, 0, 0, 0.5);
+  --shadow-accent: 0 0 0 1px var(--ac-edge), 0 16px 44px var(--ac-glow);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   §9 MOTION
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  --dur-fast: 0.2s;
+  --dur-base: 0.42s;
+  --dur-slow: 0.72s;
+  --dur-slide: 0.55s;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --stagger: 0.055s;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   §10 SCALE — deck geometry
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  --slide-w: 1280px;
+  --slide-h: 720px;
+  --pad-x: 64px;
+  --pad-y: 40px;
+}
+
+/* ============================================================================
+   SLIDE BASE
+   ========================================================================== */
+
+/* The per-slide accent override. Every component that reads --ac picks it
+   up, so a section can re-tint the whole slide with one declaration. */
+.slide {
+  --ac: var(--slide-accent, var(--accent));
+  --ac-soft: color-mix(in srgb, var(--ac) 12%, transparent);
+  --ac-edge: color-mix(in srgb, var(--ac) 36%, transparent);
+  --ac-faint: color-mix(in srgb, var(--ac) 6%, transparent);
+  --ac-glow: color-mix(in srgb, var(--ac) 14%, transparent);
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  background: var(--surface-1);
+  padding: var(--pad-y) var(--pad-x) calc(var(--pad-y) * 0.5 + 26px);
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  overflow: hidden;
+}
+.slide.is-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.reveal > * {
+  will-change: transform, opacity;
+}
+
+/* A large, near-invisible numeral set behind the content — editorial
+   furniture that gives each slide a distinct silhouette. */
+.ghost-num {
+  position: absolute;
+  right: calc(var(--pad-x) - 14px);
+  top: 6px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-ghost);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  color: rgba(255, 255, 255, 0.022);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* A vertical accent hairline used to bind an eyebrow to its heading. */
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--ac);
+  font-weight: 500;
+}
+.eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 1px;
+  background: var(--ac);
+  opacity: 0.7;
+  flex: none;
+}
+.eyebrow-plain::before {
+  display: none;
+}
+
+.h-slide {
+  font-size: var(--fs-title);
+  font-weight: 600;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-display);
+  color: var(--ink);
+}
+
+.h-sub {
+  font-size: var(--fs-heading);
+  font-weight: 600;
+  line-height: var(--lh-snug);
+  letter-spacing: -0.012em;
+  color: var(--ink);
+}
+
+.p-lead {
+  font-size: var(--fs-lead);
+  line-height: var(--lh-body);
+  color: var(--ink-soft);
+}
+
+.p-body {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--ink-muted);
+}
+
+.p-mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  line-height: 1.6;
+  letter-spacing: var(--ls-mono);
+  color: var(--ink-muted);
+}
+
+/* Mono micro-label — the deck's smallest typographic register. */
+.tag {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 500;
+}
+.tag-accent {
+  color: var(--ac);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   SURFACES
+   Cards are used sparingly — elevation must communicate hierarchy. Most
+   slides now group content with rules, negative space and columns instead.
+   ────────────────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface-2);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-1);
+}
+
+.card-flat {
+  background: var(--surface-2);
+  border: 1px solid var(--edge-subtle);
+  border-radius: var(--radius-card);
+}
+
+.card-accent {
+  background: linear-gradient(
+    180deg,
+    var(--ac-faint),
+    var(--surface-2) 62%
+  );
+  border: 1px solid var(--ac-edge);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-accent);
+}
+
+/* A panel with no box at all — just a top rule and a wash. */
+.panel {
+  position: relative;
+  padding-top: 14px;
+}
+.panel::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--edge);
+}
+.panel-accent::before {
+  background: linear-gradient(90deg, var(--ac), transparent 82%);
+  height: 2px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   GROUPING PRIMITIVES
+   ────────────────────────────────────────────────────────────────────────── */
+.rule {
+  height: 1px;
+  background: var(--edge);
+  width: 100%;
+}
+.rule-accent {
+  height: 2px;
+  background: linear-gradient(90deg, var(--ac), transparent 82%);
+  width: 100%;
+}
+
+/* A vertical hairline for separating columns without boxing them. */
+.rule-v {
+  width: 1px;
+  align-self: stretch;
+  background: var(--edge);
+}
+
+/* A list whose items are separated by hairlines instead of card borders. */
+.rows {
+  display: flex;
+  flex-direction: column;
+}
+.rows > * {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+.rows > *:last-child {
+  border-bottom: none;
+}
+
+/* A hairline matrix — cells separated by rules, never by boxes. */
+.matrix {
+  display: grid;
+  border-top: 1px solid var(--edge);
+  border-left: 1px solid var(--edge);
+}
+.matrix > * {
+  border-right: 1px solid var(--edge);
+  border-bottom: 1px solid var(--edge);
+  padding: 14px 16px;
+}
+
+/* A horizontal strip of cells separated by vertical hairlines only. */
+.hair-grid {
+  display: grid;
+}
+.hair-grid > * {
+  border-left: 1px solid var(--edge);
+  padding: 0 20px;
+}
+.hair-grid > *:first-child {
+  border-left: none;
+  padding-left: 0;
+}
+.hair-grid > *:last-child {
+  padding-right: 0;
+}
+
+/* A numbered editorial row — big numeral left, content right, hairline below. */
+.num-row {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 22px;
+  align-items: start;
+}
+.num-row .n {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--ac);
+  padding-top: 3px;
+}
+
+/* A status marker: a small labelled dot with a soft halo. */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.status i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.status-live i {
+  color: var(--success);
+}
+.status-next i {
+  color: var(--warn);
+}
+.status-open i {
+  color: var(--ink-faint);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   METRICS
+   ────────────────────────────────────────────────────────────────────────── */
+.kpi-num {
+  font-size: var(--fs-kpi);
+  font-weight: 600;
+  line-height: 0.94;
+  letter-spacing: var(--ls-display);
+  color: var(--ac);
+}
+.kpi-cap {
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-top: 12px;
+}
+
+/* A horizontal band of metrics divided by vertical rules. */
+.stat-band {
+  display: grid;
+  border-top: 1px solid var(--edge);
+  padding-top: 20px;
+}
+.stat-band > * + * {
+  border-left: 1px solid var(--edge);
+  padding-left: 26px;
+}
+.stat-band > * {
+  padding-right: 26px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   FLOW / PIPELINE
+   ────────────────────────────────────────────────────────────────────────── */
+.flow {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+.flow-node {
+  position: relative;
+  padding-right: 34px;
+}
+.flow-node::after {
+  content: "";
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-top: 1px solid var(--ac);
+  border-right: 1px solid var(--ac);
+  transform: translateY(-50%) rotate(45deg);
+  opacity: 0.75;
+}
+.flow-node:last-child::after {
+  display: none;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   TERMINAL MOCK
+   ────────────────────────────────────────────────────────────────────────── */
+.term {
+  background: #0a0b09;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  box-shadow: var(--shadow-2);
+}
+.term-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--edge);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.term-body {
+  padding: 16px 18px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.85;
+  color: var(--ink-muted);
+}
+.term-body .cmd {
+  color: var(--ink);
+}
+.term-body .ok {
+  color: var(--success);
+}
+.term-body .warn {
+  color: var(--warn);
+}
+.term-body .key {
+  color: var(--ac);
+}
+.term-body .dim {
+  color: var(--ink-faint);
+}
+.term-body .row {
+  display: flex;
+  gap: 10px;
+}
+.term-body .row .sig {
+  width: 12px;
+  flex: none;
+  color: var(--ink-faint);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   PILLS & CHIPS
+   ────────────────────────────────────────────────────────────────────────── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px 11px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 500;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.pill-accent {
+  color: var(--ac);
+  background: var(--ac-soft);
+  border-color: var(--ac-edge);
+}
+.pill-danger {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 13%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 34%, transparent);
+}
+.pill-warn {
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 13%, transparent);
+  border-color: color-mix(in srgb, var(--warn) 34%, transparent);
+}
+.pill-info {
+  color: var(--info);
+  background: color-mix(in srgb, var(--info) 13%, transparent);
+  border-color: color-mix(in srgb, var(--info) 34%, transparent);
+}
+.pill-success {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 13%, transparent);
+  border-color: color-mix(in srgb, var(--success) 34%, transparent);
+}
+.pill-muted {
+  color: var(--ink-muted);
+  background: var(--surface-3);
+  border-color: var(--edge);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   LISTS
+   ────────────────────────────────────────────────────────────────────────── */
+.bul {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--ink-soft);
+}
+.bul::before {
+  content: "";
+  flex: none;
+  width: 5px;
+  height: 5px;
+  margin-top: 0.6em;
+  border-radius: 50%;
+  background: var(--ac);
+  opacity: 0.85;
+}
+.bul-tight {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  font-size: var(--fs-small);
+  line-height: 1.42;
+  color: var(--ink-soft);
+}
+.bul-tight::before {
+  content: "";
+  flex: none;
+  width: 4px;
+  height: 4px;
+  margin-top: 0.58em;
+  border-radius: 50%;
+  background: var(--ac);
+  opacity: 0.8;
+}
+
+/* An indexed editorial item — big numeral, title, description. */
+.idx {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  color: var(--ac);
+  opacity: 0.8;
+  flex: none;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   BACKDROP
+   ────────────────────────────────────────────────────────────────────────── */
+.grid-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(var(--edge-subtle) 1px, transparent 1px),
+    linear-gradient(90deg, var(--edge-subtle) 1px, transparent 1px);
+  background-size: 56px 56px;
+  opacity: 0.4;
+  mask-image: radial-gradient(ellipse 72% 66% at 46% 38%, #000 24%, transparent 100%);
+  -webkit-mask-image: radial-gradient(
+    ellipse 72% 66% at 46% 38%,
+    #000 24%,
+    transparent 100%
+  );
+}
+
+.bloom {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  background: var(--ac);
+  opacity: 0.12;
+  animation: drift 26s ease-in-out infinite alternate;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   MOTION PIECES
+   ────────────────────────────────────────────────────────────────────────── */
+@keyframes drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(26px, -22px, 0) scale(1.08);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.85;
+  }
+  70% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -240;
+  }
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* A live status dot with a breathing halo. */
+.live-dot {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ac);
+  flex: none;
+}
+.live-dot::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px solid var(--ac);
+  animation: pulse-ring 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+/* A dashed connector that flows — used on the pipeline slides. */
+.flow-line {
+  stroke: var(--ac);
+  stroke-width: 1.5;
+  fill: none;
+  stroke-dasharray: 5 6;
+  opacity: 0.55;
+  animation: dash-flow 14s linear infinite;
+}
+
+.spin {
+  animation: spin-slow 44s linear infinite;
+  transform-origin: center;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   SLIDE CHROME — footer progress, chapter label, slide number
+   ────────────────────────────────────────────────────────────────────────── */
+.deck-footer {
+  position: absolute;
+  left: var(--pad-x);
+  right: var(--pad-x);
+  bottom: calc(var(--pad-y) * 0.5);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+}
+.deck-footer .chap {
+  color: var(--ac);
+  opacity: 0.85;
+}
+.deck-footer .track {
+  flex: 1;
+  height: 1px;
+  background: var(--edge);
+  overflow: hidden;
+}
+.deck-footer .fill {
+  height: 100%;
+  width: 0%;
+  background: var(--ac);
+  transition: width var(--dur-slow) var(--ease-out);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   DENSITY MODIFIERS — a slide carrying a lot of detail opts into .dense
+   ────────────────────────────────────────────────────────────────────────── */
+.dense .p-lead {
+  font-size: var(--fs-body);
+}
+.dense .h-sub {
+  font-size: 18px;
+}
+.dense .bul {
+  font-size: var(--fs-small);
+  line-height: 1.42;
+}
+.dense .p-body {
+  line-height: 1.46;
+}
+.dense .mt-8 {
+  margin-top: var(--space-5);
+}
+.dense .mt-7 {
+  margin-top: var(--space-5);
+}
+.dense .mt-6 {
+  margin-top: var(--space-4);
+}
+.dense .mt-5 {
+  margin-top: var(--space-4);
+}
+.dense .rows > * {
+  padding: 9px 0;
+}
+.dense .matrix > * {
+  padding: 11px 13px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   COMPARISON TABLE
+   ────────────────────────────────────────────────────────────────────────── */
+.cmp {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--fs-small);
+}
+.cmp th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-weight: 500;
+  padding: 0 16px 12px;
+  vertical-align: bottom;
+}
+.cmp td {
+  padding: 11px 16px;
+  border-top: 1px solid var(--edge-subtle);
+  color: var(--ink-soft);
+  line-height: 1.42;
+  vertical-align: top;
+}
+.cmp .hi {
+  color: var(--ink);
+  font-weight: 500;
+}
+.cmp .fx {
+  color: var(--ac);
+}
+/* The Feluda column gets a wash instead of a box. */
+.cmp .col-fx {
+  background: var(--ac-faint);
+  box-shadow: inset 1px 0 0 var(--ac-edge), inset -1px 0 0 var(--ac-edge);
+}
+.cmp th.col-fx {
+  color: var(--ac);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   DIAGRAMS — hand-authored inline SVG primitives.
+   Naming: `.dg-*` (diagram) for shared parts.
+   ────────────────────────────────────────────────────────────────────────── */
+.dg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.dg-label {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  fill: var(--ink);
+  letter-spacing: -0.01em;
+}
+.dg-label-sm {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  fill: var(--ink-soft);
+}
+.dg-mono {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  fill: var(--ink-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.dg-mono-sm {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  fill: var(--ink-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.dg-cap {
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  fill: var(--ink-muted);
+}
+.dg-cap-strong {
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  font-weight: 600;
+  fill: var(--ink-soft);
+}
+.dg-accent {
+  fill: var(--ac);
+}
+.dg-accent-strong {
+  fill: var(--ac-strong);
+}
+.dg-danger {
+  fill: var(--danger);
+}
+.dg-warn {
+  fill: var(--warn);
+}
+.dg-success {
+  fill: var(--success);
+}
+.dg-info {
+  fill: var(--info);
+}
+.dg-faint {
+  fill: var(--ink-faint);
+}
+.dg-muted {
+  fill: var(--ink-muted);
+}
+
+.dg-box {
+  fill: var(--surface-2);
+  stroke: var(--edge);
+  stroke-width: 1;
+}
+.dg-box-accent {
+  fill: var(--ac-soft);
+  stroke: var(--ac-edge);
+  stroke-width: 1;
+}
+.dg-box-warn {
+  fill: color-mix(in srgb, var(--warn) 13%, transparent);
+  stroke: color-mix(in srgb, var(--warn) 34%, transparent);
+  stroke-width: 1;
+}
+.dg-box-danger {
+  fill: color-mix(in srgb, var(--danger) 13%, transparent);
+  stroke: color-mix(in srgb, var(--danger) 34%, transparent);
+  stroke-width: 1;
+}
+.dg-box-success {
+  fill: color-mix(in srgb, var(--success) 13%, transparent);
+  stroke: color-mix(in srgb, var(--success) 34%, transparent);
+  stroke-width: 1;
+}
+.dg-box-empty {
+  fill: none;
+  stroke: var(--edge-strong);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.dg-line {
+  stroke: var(--edge-strong);
+  stroke-width: 1.5;
+  fill: none;
+}
+.dg-line-broken {
+  stroke: var(--danger);
+  stroke-width: 1.5;
+  fill: none;
+  stroke-dasharray: 3 4;
+  opacity: 0.85;
+}
+.dg-line-accent {
+  stroke: var(--ac);
+  stroke-width: 2;
+  fill: none;
+}
+.dg-rail {
+  stroke: var(--edge);
+  stroke-width: 1;
+  fill: none;
+}
+.dg-rail-faint {
+  stroke: var(--edge-subtle);
+  stroke-width: 1;
+  fill: none;
+}
+
+.dg-arrow {
+  fill: var(--edge-strong);
+}
+.dg-arrow-accent {
+  fill: var(--ac);
+}
+.dg-arrow-danger {
+  fill: var(--danger);
+}
+
+.dg-wash {
+  fill: var(--ac);
+  opacity: 0.06;
+}
+.dg-hatch {
+  fill: none;
+  stroke: var(--edge-strong);
+  stroke-width: 1;
+  opacity: 0.5;
+}
+.dg-divider {
+  stroke: var(--edge);
+  stroke-width: 1;
+  stroke-dasharray: 2 5;
+}
+.dg-ring {
+  fill: none;
+  stroke: var(--ac);
+  stroke-width: 1.5;
+  opacity: 0.75;
+}
+.dg-gap-band {
+  fill: var(--danger);
+  opacity: 0.1;
+}
+.dg-cov-band {
+  fill: var(--success);
+  opacity: 0.14;
+}
+.dg-spike {
+  fill: var(--danger);
+  opacity: 0.75;
+}
+.dg-plateau {
+  fill: var(--ac);
+  opacity: 0.28;
+}
+
+.dg-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+.dg-key i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+  display: inline-block;
+}
+.dg-key-accent i {
+  background: var(--ac);
+}
+.dg-key-warn i {
+  background: var(--warn);
+}
+.dg-key-danger i {
+  background: var(--danger);
+}
+.dg-key-success i {
+  background: var(--success);
+}
+.dg-key-muted i {
+  background: var(--edge-strong);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   REDUCED MOTION — honour the OS setting.
+   ────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

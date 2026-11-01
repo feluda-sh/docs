@@ -1,0 +1,3414 @@
+<!doctype html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Feluda — Future of Code Review and Agentic Pentesting</title>
+    <meta
+      name="description"
+      content="Feluda: continuous AI code review and agentic security testing for every change."
+    />
+
+    <!-- ── Inline SVG favicon — no extra file, no 404 ─────────────────── -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23151614'/%3E%3Cpath d='M10 7h12v4.6h-7.4v4.1h6.6v4.5h-6.6V25H10z' fill='%23b0b3fc'/%3E%3C/svg%3E"
+    />
+
+    <!-- ── Fonts: Geist + Geist Mono (no Inter) ──────────────────────── -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- ── Theme: the single file that controls the entire look ──────────
+         The `?v=` query is a cache-buster — bump it so a theme.css edit
+         shows up on reload instead of serving the cached stylesheet. ───── -->
+    <link rel="stylesheet" href="./theme.css?v=2" />
+
+    <!-- ── Tailwind (CDN). The @theme block below registers the semantic
+           aliases that point at theme.css's custom properties, so
+           `bg-surface-2` and `text-ink` resolve to the theme variables.
+           Change theme.css and the whole deck re-skins. ─────────────────── -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              surface: {
+                0: 'var(--surface-0)',
+                1: 'var(--surface-1)',
+                2: 'var(--surface-2)',
+                3: 'var(--surface-3)',
+              },
+              ink: {
+                DEFAULT: 'var(--ink)',
+                soft: 'var(--ink-soft)',
+                muted: 'var(--ink-muted)',
+                faint: 'var(--ink-faint)',
+              },
+              accent: {
+                DEFAULT: 'var(--accent)',
+                strong: 'var(--accent-strong)',
+                dim: 'var(--accent-dim)',
+              },
+              slide: {
+                DEFAULT: 'var(--ac)',
+              },
+              edge: {
+                DEFAULT: 'var(--edge)',
+                subtle: 'var(--edge-subtle)',
+                strong: 'var(--edge-strong)',
+              },
+              danger: 'var(--danger)',
+              warn: 'var(--warn)',
+              info: 'var(--info)',
+              success: 'var(--success)',
+            },
+            fontFamily: {
+              sans: ['var(--font-sans)'],
+              mono: ['var(--font-mono)'],
+            },
+            borderRadius: {
+              card: 'var(--radius-card)',
+              pill: 'var(--radius-pill)',
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- ── Motion (vanilla build of Framer Motion's successor).
+           The UMD bundle publishes the global as `Motion` (capital M).
+           If the CDN is unreachable the deck still works — the engine
+           detects a missing Motion and falls back to instant reveals. ──── -->
+    <script src="https://cdn.jsdelivr.net/npm/motion@11.11.13/dist/motion.js"></script>
+
+    <style>
+      /* Base reset — deliberately minimal; preflight is not used so the
+         theme file owns every visual decision. */
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--surface-0);
+        color: var(--ink);
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+        overflow: hidden;
+      }
+      ::selection {
+        background: var(--accent);
+        color: var(--ink-inverse);
+      }
+
+      /* ── Deck stage: scales the fixed 1280×720 canvas to the viewport ── */
+      #stage {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+      }
+      #deck {
+        position: relative;
+        width: var(--slide-w);
+        height: var(--slide-h);
+        transform-origin: center center;
+      }
+
+      /* ── Slide base ──────────────────────────────────────────────────── */
+      .slide {
+        position: absolute;
+        inset: 0;
+        background: var(--surface-1);
+        /* Bottom padding reserves the strip the footer sits in, so content
+           never collides with it. */
+        padding: var(--pad-y) var(--pad-x) calc(var(--pad-y) * 0.5 + 26px);
+        display: flex;
+        flex-direction: column;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .slide.is-active {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+      }
+
+      /* Slide-content wrapper used for entrance staggering */
+      .reveal > * {
+        will-change: transform, opacity;
+      }
+
+      /* ── Nav arrows ──────────────────────────────────────────────────── */
+      .nav {
+        position: fixed;
+        bottom: 18px;
+        z-index: 50;
+        display: grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 1px solid var(--edge);
+        background: var(--surface-2);
+        color: var(--ink-muted);
+        cursor: pointer;
+        transition: color var(--dur-fast) var(--ease-out),
+          border-color var(--dur-fast) var(--ease-out),
+          transform var(--dur-fast) var(--ease-out);
+      }
+      .nav:hover {
+        color: var(--accent);
+        border-color: var(--accent-edge);
+        transform: translateY(-2px);
+      }
+      .nav:disabled {
+        opacity: 0.25;
+        cursor: default;
+        transform: none;
+      }
+      #prev {
+        right: 26px;
+      }
+      #next {
+        left: 26px;
+      }
+
+      /* ── Keyboard hint chip ─────────────────────────────────────────── */
+      #hint {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 50;
+        font-family: var(--font-mono);
+        font-size: var(--fs-eyebrow);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: opacity var(--dur-slow) var(--ease-out);
+      }
+      #hint kbd {
+        font-family: var(--font-mono);
+        border: 1px solid var(--edge);
+        border-radius: 4px;
+        padding: 2px 6px;
+        color: var(--ink-muted);
+        background: var(--surface-2);
+      }
+
+      /* ── Screen-reader-only ─────────────────────────────────────────── */
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="stage">
+      <div id="deck">
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 1 — TITLE
+             Layout: asymmetric split. Oversized headline anchored left,
+             a vertical metric rail on the right separated by a hairline.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide" data-slide="1" aria-label="Title">
+          <div class="grid-bg absolute inset-0"></div>
+          <div
+            class="bloom"
+            style="width: 640px; height: 640px; top: -220px; right: -140px"
+          ></div>
+          <div class="ghost-num">01</div>
+
+          <div class="relative flex h-full flex-col justify-between">
+            <div class="reveal">
+              <div class="mb-7 flex items-center gap-3">
+                <span class="pill pill-accent">Feluda</span>
+                <span class="p-mono text-ink-faint">v&nbsp;·&nbsp;2026</span>
+              </div>
+
+              <h1
+                class="text-[length:var(--fs-display)] font-semibold leading-[var(--lh-tight)] tracking-[var(--ls-display)] text-ink"
+              >
+                Future of Code Review
+                <span class="block text-accent">&amp; Agentic Pentesting</span>
+              </h1>
+
+              <p
+                class="mt-8 max-w-[46ch] text-[length:var(--fs-lead)] leading-[var(--lh-body)] text-ink-soft"
+              >
+                One platform that reads every pull request like a senior engineer,
+                and attacks your running systems like an adversary — continuously,
+                on every change, with no pipeline to wire up.
+              </p>
+            </div>
+
+            <div class="reveal">
+              <div class="flex items-center gap-6">
+                <div class="live-dot"></div>
+                <span class="status status-live">Running on every change</span>
+                <span class="h-px flex-1 bg-[color:var(--edge)]"></span>
+                <span class="status status-open">feluda.puku.sh</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Introduction</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">01</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 2 — THE PROBLEM
+             Layout: split 45/55. Left is a single large statement on a
+             dark wash; right is three failure modes as hairline rows.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide" data-slide="2" aria-label="The problem">
+          <div class="ghost-num">02</div>
+
+          <div class="relative flex h-full gap-14">
+            <!-- Left: the claim -->
+            <div class="reveal flex w-[38%] flex-col justify-between">
+              <div>
+                <p class="eyebrow mb-5">The Problem</p>
+                <h2 class="h-slide" style="font-size: 34px">
+                  Code review is a human bottleneck.
+                  <span class="mt-3 block text-ink-muted">
+                    Security review is a human
+                    <em class="not-italic text-accent">rarity</em>.
+                  </span>
+                </h2>
+              </div>
+
+              <div class="card-accent p-6">
+                <div class="pill pill-accent mb-4">The gap</div>
+                <p class="p-body text-ink">
+                  Nobody has unified
+                  <span class="text-accent">code quality</span>,
+                  <span class="text-accent">code security</span> and
+                  <span class="text-accent">runtime security</span> into a single
+                  continuous loop that runs on every single change.
+                </p>
+              </div>
+            </div>
+
+            <!-- Right: the three failure modes, ruled not boxed -->
+            <div class="reveal flex flex-1 flex-col justify-center">
+              <div class="rows">
+                <div class="num-row">
+                  <div class="n">01</div>
+                  <div>
+                    <div class="mb-2 flex items-center gap-3">
+                      <h3 class="h-sub">Reviews queue behind humans</h3>
+                      <span class="pill pill-warn">Bottleneck</span>
+                    </div>
+                    <p class="p-body max-w-[62ch]">
+                      Every PR waits for an available reviewer. On a busy repo that
+                      is hours to days — by which point the code has already moved
+                      on.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="num-row">
+                  <div class="n">02</div>
+                  <div>
+                    <div class="mb-2 flex items-center gap-3">
+                      <h3 class="h-sub">Security is a separate purchase</h3>
+                      <span class="pill pill-danger">Blind spot</span>
+                    </div>
+                    <p class="p-body max-w-[62ch]">
+                      SAST, SCA, DAST, CSPM, pentest. Different vendors, different
+                      dashboards, different onboarding, different months of the
+                      year.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="num-row">
+                  <div class="n">03</div>
+                  <div>
+                    <div class="mb-2 flex items-center gap-3">
+                      <h3 class="h-sub">Pentest is a snapshot</h3>
+                      <span class="pill pill-info">Point in time</span>
+                    </div>
+                    <p class="p-body max-w-[62ch]">
+                      An annual report describes what was true on one day.
+                      Everything merged in the other 364 days went unexamined.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Problem</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">02</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 3 — THE THESIS
+             Layout: a horizontal three-step spine with a connecting line
+             and oversized step numerals — a process, not a card row.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide" data-slide="3" aria-label="The thesis">
+          <div class="grid-bg absolute inset-0"></div>
+          <div class="ghost-num">03</div>
+
+          <div class="relative reveal flex h-full flex-col">
+            <p class="eyebrow mb-5">The Thesis</p>
+            <h2 class="h-slide max-w-[52ch]">
+              Review the code. Then
+              <span class="text-accent">attack</span> the thing it builds.
+            </h2>
+
+            <div class="mt-auto">
+              <!-- The spine -->
+              <div class="relative mb-9 h-px w-full bg-[color:var(--edge)]">
+                <div
+                  class="absolute left-0 top-0 h-px w-full origin-left bg-[color:var(--ac)] opacity-60"
+                ></div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-12">
+                <div class="relative">
+                  <div
+                    class="mb-4 grid h-11 w-11 place-items-center rounded-full border border-[color:var(--ac-edge)] bg-[color:var(--ac-soft)] font-mono text-[13px] text-accent"
+                  >
+                    01
+                  </div>
+                  <h3 class="h-sub mb-3">Review</h3>
+                  <p class="p-body max-w-[36ch]">
+                    Every PR is read, understood, and critiqued — summary, inline
+                    comments, and a check run, posted where the developer already
+                    works.
+                  </p>
+                </div>
+
+                <div class="relative">
+                  <div
+                    class="mb-4 grid h-11 w-11 place-items-center rounded-full border border-[color:var(--danger-edge)] bg-[color:var(--danger-soft)] font-mono text-[13px] text-danger"
+                  >
+                    02
+                  </div>
+                  <h3 class="h-sub mb-3">Scan</h3>
+                  <p class="p-body max-w-[36ch]">
+                    Six specialised security agents fan out over the change and
+                    the deployment — each in its own isolated environment, each
+                    with its own retry and recovery path.
+                  </p>
+                </div>
+
+                <div class="relative">
+                  <div
+                    class="mb-4 grid h-11 w-11 place-items-center rounded-full border border-[color:var(--success-edge)] bg-[color:var(--success-soft)] font-mono text-[13px] text-success"
+                  >
+                    03
+                  </div>
+                  <h3 class="h-sub mb-3">Fix</h3>
+                  <p class="p-body max-w-[36ch]">
+                    Findings ship with evidence, a severity, and a remediation —
+                    often as an AutoFix pull request, not a spreadsheet row.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Thesis</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">03</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 4 — POSITIONING
+             Layout: a two-column contrast — muted "them" vs. accent "us" —
+             with a hairline metric band underneath.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide" data-slide="4" aria-label="Positioning">
+          <div class="ghost-num">04</div>
+
+          <div class="reveal">
+            <p class="eyebrow mb-4">Positioning</p>
+            <h2 class="h-slide max-w-4xl">Where Feluda sits</h2>
+          </div>
+
+          <div class="mt-8 grid grid-cols-2 gap-12">
+            <!-- Them -->
+            <div class="reveal">
+              <div class="mb-5 flex items-center justify-between">
+                <h3 class="h-sub text-ink-muted">Existing code review</h3>
+                <span class="pill pill-muted">Greptile · Copilot</span>
+              </div>
+              <div class="rows">
+                <div class="p-body">Understands the diff, comments on it</div>
+                <div class="p-body">Often one model, one perspective</div>
+                <div class="p-body">
+                  Security is a separate add-on or a separate tool
+                </div>
+                <div class="p-body">No memory of the running system</div>
+                <div class="p-body">Point-in-time snapshot of the PR</div>
+              </div>
+            </div>
+
+            <!-- Us -->
+            <div class="reveal">
+              <div class="mb-5 flex items-center justify-between">
+                <h3 class="h-sub text-accent">Feluda</h3>
+                <span class="pill pill-accent">Continuous + adversarial</span>
+              </div>
+              <div class="rows" style="border-top: 1px solid var(--ac-edge)">
+                <div class="p-body text-ink">
+                  Reviews the diff <em class="not-italic text-accent">and</em> runs
+                  6 parallel security agents over it
+                </div>
+                <div class="p-body text-ink">
+                  Full-repo context, not just the changed lines
+                </div>
+                <div class="p-body text-ink">
+                  Black-box probes the deployed URL with an SSRF-guarded scanner
+                </div>
+                <div class="p-body text-ink">
+                  Indexed corpus powers retrieval-augmented review, not blind
+                  prompting
+                </div>
+                <div class="p-body text-ink">
+                  Runs on every push, not on an annual calendar
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metric band -->
+          <div class="reveal mt-auto hair-grid grid-cols-3">
+            <div>
+              <div class="h-sub mb-2 text-accent">Full-repo context</div>
+              <p class="p-body">
+                The review reads the entire tree, not just the diff. A finding
+                can be traced to the code that makes it reachable.
+              </p>
+            </div>
+            <div>
+              <div class="h-sub mb-2 text-accent">No new infrastructure</div>
+              <p class="p-body">
+                Nothing to install, cluster or operate. It runs alongside the
+                pipeline you already have.
+              </p>
+            </div>
+            <div>
+              <div class="h-sub mb-2 text-accent">Incremental re-review</div>
+              <p class="p-body">
+                A 10k-file repo with one changed file re-reviews in seconds, not
+                minutes.
+              </p>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Positioning</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">04</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 5 — THE GAP (SDLC / ADLC vs. FELUDA) — DIAGRAM
+             Layout: full-bleed schematic with a ruled annotation column.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide dense" data-slide="5" aria-label="The gap in SDLC and ADLC">
+          <div class="reveal">
+            <p class="eyebrow mb-3">The gap</p>
+            <h2 class="h-slide max-w-4xl">
+              ADLC bought speed. Not coverage.
+            </h2>
+          </div>
+
+          <!-- ── Diagram ──────────────────────────────────────────────── -->
+          <div class="mt-6 flex-1 min-h-0">
+            <svg
+              class="dg"
+              viewBox="0 0 1130 470"
+              role="img"
+              aria-label="Two-row diagram. Top row: the classic ADLC pipeline as disconnected tools with broken handoffs and a single annual pentest point. Bottom row: Feluda as one continuous agentic loop triggered on every commit and every deploy."
+            >
+              <defs>
+                <marker
+                  id="ah"
+                  viewBox="0 0 10 10"
+                  refX="9"
+                  refY="5"
+                  markerWidth="7"
+                  markerHeight="7"
+                  orient="auto-start-reverse"
+                >
+                  <path class="dg-arrow" d="M 0 0 L 10 5 L 0 10 z" />
+                </marker>
+                <marker
+                  id="ah-accent"
+                  viewBox="0 0 10 10"
+                  refX="9"
+                  refY="5"
+                  markerWidth="7"
+                  markerHeight="7"
+                  orient="auto-start-reverse"
+                >
+                  <path class="dg-arrow-accent" d="M 0 0 L 10 5 L 0 10 z" />
+                </marker>
+                <marker
+                  id="ah-danger"
+                  viewBox="0 0 10 10"
+                  refX="9"
+                  refY="5"
+                  markerWidth="7"
+                  markerHeight="7"
+                  orient="auto-start-reverse"
+                >
+                  <path class="dg-arrow-danger" d="M 0 0 L 10 5 L 0 10 z" />
+                </marker>
+                <pattern
+                  id="hatch"
+                  width="7"
+                  height="7"
+                  patternTransform="rotate(45)"
+                  patternUnits="userSpaceOnUse"
+                >
+                  <line
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="7"
+                    stroke="var(--edge-strong)"
+                    stroke-width="1"
+                    opacity="0.45"
+                  />
+                </pattern>
+              </defs>
+
+              <!-- ══ TOP HALF: THE CLASSIC ADLC PIPELINE ══════════════ -->
+              <text class="dg-mono" x="0" y="14">TODAY — POINT TOOLS, HANDOFF GAPS</text>
+              <line class="dg-divider" x1="0" y1="26" x2="1130" y2="26" />
+
+              <!-- Stage boxes -->
+              <g>
+                <!-- Plan -->
+                <rect class="dg-box" x="0" y="52" width="128" height="62" rx="8" />
+                <text class="dg-label" x="14" y="78">Plan</text>
+                <text class="dg-cap" x="14" y="97">Jira · Linear</text>
+
+                <!-- Code -->
+                <rect class="dg-box" x="172" y="52" width="128" height="62" rx="8" />
+                <text class="dg-label" x="186" y="78">Code</text>
+                <text class="dg-cap" x="186" y="97">GitHub · GitLab</text>
+
+                <!-- Build -->
+                <rect class="dg-box" x="344" y="52" width="128" height="62" rx="8" />
+                <text class="dg-label" x="358" y="78">Build</text>
+                <text class="dg-cap" x="358" y="97">CI pipeline</text>
+
+                <!-- Test -->
+                <rect class="dg-box" x="516" y="52" width="128" height="62" rx="8" />
+                <text class="dg-label" x="530" y="78">Test</text>
+                <text class="dg-cap" x="530" y="97">Unit · E2E</text>
+
+                <!-- Deploy -->
+                <rect class="dg-box" x="688" y="52" width="128" height="62" rx="8" />
+                <text class="dg-label" x="702" y="78">Deploy</text>
+                <text class="dg-cap" x="702" y="97">CI/CD release</text>
+
+                <!-- Operate — no owner -->
+                <rect class="dg-box-empty" x="860" y="52" width="128" height="62" rx="8" />
+                <rect x="860" y="52" width="128" height="62" rx="8" fill="url(#hatch)" />
+                <text class="dg-label-sm" x="874" y="78">Operate</text>
+                <text class="dg-cap" x="874" y="97">No continuous owner</text>
+              </g>
+
+              <!-- Broken handoff arrows between the silos -->
+              <g class="dg-line-broken" marker-end="url(#ah-danger)">
+                <path d="M 132 83 L 164 83" />
+                <path d="M 304 83 L 336 83" />
+                <path d="M 476 83 L 508 83" />
+                <path d="M 648 83 L 680 83" />
+                <path d="M 820 83 L 852 83" />
+              </g>
+
+              <!-- Handoff-gap callouts -->
+              <g>
+                <text class="dg-mono-sm dg-danger" x="132" y="132" text-anchor="middle">
+                  no context
+                </text>
+                <text class="dg-mono-sm dg-danger" x="304" y="132" text-anchor="middle">
+                  no context
+                </text>
+                <text class="dg-mono-sm dg-danger" x="476" y="132" text-anchor="middle">
+                  no context
+                </text>
+                <text class="dg-mono-sm dg-danger" x="648" y="132" text-anchor="middle">
+                  no context
+                </text>
+                <text class="dg-mono-sm dg-danger" x="820" y="132" text-anchor="middle">
+                  no context
+                </text>
+                <text class="dg-mono-sm dg-warn" x="924" y="132" text-anchor="middle">
+                  no owner
+                </text>
+              </g>
+
+              <!-- Security tool band — point tools that attach to ONE stage -->
+              <text class="dg-mono" x="0" y="170">SECURITY ATTACHES AS ANOTHER BOX</text>
+
+              <g>
+                <!-- SAST -->
+                <rect class="dg-box-warn" x="172" y="184" width="128" height="54" rx="8" />
+                <text class="dg-label-sm" x="186" y="207">SAST</text>
+                <text class="dg-cap" x="186" y="225">One rule engine</text>
+
+                <!-- DAST -->
+                <rect class="dg-box-warn" x="516" y="184" width="128" height="54" rx="8" />
+                <text class="dg-label-sm" x="530" y="207">DAST</text>
+                <text class="dg-cap" x="530" y="225">Nightly, one env</text>
+
+                <!-- SCA -->
+                <rect class="dg-box-warn" x="688" y="184" width="128" height="54" rx="8" />
+                <text class="dg-label-sm" x="702" y="207">SCA</text>
+                <text class="dg-cap" x="702" y="225">Dependency list</text>
+
+                <!-- Pentest — the only thing that touches the whole year -->
+                <rect class="dg-box-danger" x="1006" y="184" width="124" height="54" rx="8" />
+                <text class="dg-label-sm" x="1020" y="207">Pentest</text>
+                <text class="dg-cap" x="1020" y="225">Annual, PDF</text>
+                <path class="dg-line-broken" d="M 1068 238 L 1068 252" marker-end="url(#ah-danger)" />
+              </g>
+
+              <!-- Dashed connectors from the band up to their single host stage -->
+              <g class="dg-rail" stroke-dasharray="3 4">
+                <path d="M 236 184 L 236 130" />
+                <path d="M 580 184 L 580 130" />
+                <path d="M 752 184 L 752 130" />
+                <!-- The pentest reaches past every stage — one sweep a year -->
+                <path d="M 1068 184 L 1068 130" />
+                <path class="dg-rail" d="M 0 238 L 1006 238" stroke-dasharray="2 6" opacity="0.5" />
+              </g>
+
+              <!-- The calendar: one point in time per year -->
+              <g>
+                <line class="dg-rail" x1="0" y1="262" x2="1130" y2="262" />
+                <circle cx="1068" cy="262" r="6" class="dg-spike" />
+                <text class="dg-mono-sm dg-danger" x="1068" y="284" text-anchor="middle">
+                  one day a year
+                </text>
+                <text class="dg-mono-sm dg-faint" x="0" y="284">
+                  THE YEAR — one sweep, then the calendar resets
+                </text>
+              </g>
+
+              <!-- ══ BOTTOM HALF: FELUDA ═══════════════════════════════ -->
+              <text class="dg-mono dg-accent" x="0" y="324">
+                FELUDA — ONE AGENTIC LOOP
+              </text>
+              <line class="dg-divider" x1="0" y1="336" x2="1130" y2="336" />
+
+              <!-- The wash behind the Feluda band -->
+              <rect class="dg-wash" x="0" y="350" width="1130" height="104" rx="12" />
+
+              <!-- Trigger -->
+              <rect class="dg-box-accent" x="0" y="368" width="150" height="68" rx="10" />
+              <text class="dg-label dg-accent" x="16" y="396">Trigger</text>
+              <text class="dg-cap" x="16" y="415">Every commit</text>
+              <text class="dg-cap" x="16" y="429">Every deploy</text>
+
+              <!-- The agents -->
+              <g>
+                <rect class="dg-box-accent" x="196" y="368" width="122" height="68" rx="10" />
+                <text class="dg-label-sm" x="210" y="394">Code review</text>
+                <text class="dg-mono-sm" x="210" y="412">retrieval</text>
+
+                <rect class="dg-box-accent" x="326" y="368" width="122" height="68" rx="10" />
+                <text class="dg-label-sm" x="340" y="394">Supply chain</text>
+                <text class="dg-mono-sm" x="340" y="412">advisory</text>
+
+                <rect class="dg-box-accent" x="456" y="368" width="122" height="68" rx="10" />
+                <text class="dg-label-sm" x="470" y="394">White box</text>
+                <text class="dg-mono-sm" x="470" y="412">taint · sast</text>
+
+                <rect class="dg-box-accent" x="586" y="368" width="122" height="68" rx="10" />
+                <text class="dg-label-sm" x="600" y="394">Secrets</text>
+                <text class="dg-mono-sm" x="600" y="412">entropy</text>
+
+                <rect class="dg-box-accent" x="716" y="368" width="122" height="68" rx="10" />
+                <text class="dg-label-sm" x="730" y="394">Malware</text>
+                <text class="dg-mono-sm" x="730" y="412">yara</text>
+
+                <rect class="dg-box-accent" x="846" y="368" width="122" height="68" rx="10" />
+                <text class="dg-label-sm" x="860" y="394">Network</text>
+                <text class="dg-mono-sm" x="860" y="412">ssrf · tls</text>
+
+                <rect class="dg-box-accent" x="976" y="368" width="154" height="68" rx="10" />
+                <text class="dg-label-sm" x="990" y="394">Black box</text>
+                <text class="dg-mono-sm" x="990" y="412">live deployed URL</text>
+              </g>
+
+              <!-- The continuous rail through every agent -->
+              <path
+                class="dg-line-accent"
+                d="M 150 402 L 196 402"
+                marker-end="url(#ah-accent)"
+              />
+              <g class="dg-line-accent" marker-end="url(#ah-accent)">
+                <path d="M 318 402 L 326 402" />
+                <path d="M 448 402 L 456 402" />
+                <path d="M 578 402 L 586 402" />
+                <path d="M 708 402 L 716 402" />
+                <path d="M 838 402 L 846 402" />
+                <path d="M 968 402 L 976 402" />
+              </g>
+
+              <!-- Return loop — findings feed the next commit -->
+              <path
+                class="dg-line-accent"
+                d="M 1053 436 L 1053 458 L 75 458 L 75 436"
+                marker-end="url(#ah-accent)"
+              />
+              <text
+                class="dg-mono-sm dg-accent"
+                x="564"
+                y="470"
+                text-anchor="middle"
+              >
+                findings become the next commit's input — the loop closes
+              </text>
+            </svg>
+          </div>
+
+          <!-- ── Takeaway strip: ruled columns, no boxes ────────────────── -->
+          <div class="mt-5 hair-grid grid-cols-3">
+            <div>
+              <div class="tag mb-2">Siloed tools</div>
+              <p class="p-body">
+                Each stage has its own vendor, its own data, its own report.
+                Nothing crosses the handoff.
+              </p>
+            </div>
+            <div>
+              <div class="tag mb-2">Calendar coverage</div>
+              <p class="p-body">
+                A pentest describes one day of one version. The other 364 days run
+                unexamined.
+              </p>
+            </div>
+            <div>
+              <div class="tag tag-accent mb-2">One continuous loop</div>
+              <p class="p-body text-ink">
+                One trigger, one index, seven agents, one merged review. The loop
+                closes instead of ending in a PDF.
+              </p>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">The Gap</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">05</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 6 — COMPARISON TABLE
+             Layout: full-bleed matrix, no card wrapper. The Feluda column
+             is washed, not boxed.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide" data-slide="6" aria-label="Comparison table">
+          <div class="ghost-num">06</div>
+
+          <div class="reveal">
+            <p class="eyebrow mb-4">Differentiated</p>
+            <h2 class="h-slide max-w-4xl">Code review vs. security review vs. Feluda</h2>
+          </div>
+
+          <div class="mt-7 flex-1">
+            <table class="cmp">
+              <thead>
+                <tr>
+                  <th style="width: 19%">Capability</th>
+                  <th style="width: 20%">AI code review</th>
+                  <th style="width: 22%">Other existing systems</th>
+                  <th style="width: 19%">Traditional pentest</th>
+                  <th class="col-fx" style="width: 20%">Feluda</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="hi">Trigger</td>
+                  <td>Every PR</td>
+                  <td>Every PR or a schedule</td>
+                  <td>Annual engagement</td>
+                  <td class="fx col-fx">Every PR + every deploy</td>
+                </tr>
+                <tr>
+                  <td class="hi">Code context</td>
+                  <td>Diff only</td>
+                  <td>Rule engine, file at a time</td>
+                  <td>Manual reading</td>
+                  <td class="fx col-fx">Indexed full repo + diff</td>
+                </tr>
+                <tr>
+                  <td class="hi">Runtime / live target</td>
+                  <td>No</td>
+                  <td>Separate scanner, separate schedule</td>
+                  <td>Yes</td>
+                  <td class="fx col-fx">Yes — black-box scan</td>
+                </tr>
+                <tr>
+                  <td class="hi">Behind the login</td>
+                  <td>No</td>
+                  <td>Rarely</td>
+                  <td>Yes</td>
+                  <td class="fx col-fx">Yes — session and role testing</td>
+                </tr>
+                <tr>
+                  <td class="hi">Specialist depth</td>
+                  <td>One generalist model</td>
+                  <td>Many point tools, one rule set</td>
+                  <td>One consultant</td>
+                  <td class="fx col-fx">6 parallel specialist agents</td>
+                </tr>
+                <tr>
+                  <td class="hi">Offensive testing</td>
+                  <td>No</td>
+                  <td>No</td>
+                  <td>Manual, human-led</td>
+                  <td class="fx col-fx">Autonomous, agent-led</td>
+                </tr>
+                <tr>
+                  <td class="hi">Remediation</td>
+                  <td>Suggestion in comment</td>
+                  <td>Proposed fix for review</td>
+                  <td>PDF appendix</td>
+                  <td class="fx col-fx">AutoFix PR, evidence attached</td>
+                </tr>
+                <tr>
+                  <td class="hi">Audit trail</td>
+                  <td>PR comments</td>
+                  <td>Per-tool dashboards</td>
+                  <td>Static report</td>
+                  <td class="fx col-fx">Per-scan records, exportable</td>
+                </tr>
+                <tr>
+                  <td class="hi">Time to first finding</td>
+                  <td>Seconds</td>
+                  <td>Minutes–hours</td>
+                  <td>Weeks</td>
+                  <td class="fx col-fx">Seconds</td>
+                </tr>
+                <tr>
+                  <td class="hi">Cost profile</td>
+                  <td>Per seat</td>
+                  <td>Per tool + per app</td>
+                  <td>Per engagement</td>
+                  <td class="fx col-fx">No seats, no per-scan fee</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Differentiation</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">06</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 7 — vs. OTHER EXISTING SYSTEMS
+             Layout: a two-sided ruled contrast. Left is what the incumbent
+             scanner suites do well; right is what they structurally cannot.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide dense" data-slide="7" aria-label="Versus other existing systems">
+          <div class="ghost-num">07</div>
+
+          <div class="reveal">
+            <div class="mb-4 flex items-center gap-4">
+              <p class="eyebrow">Competitive Reality</p>
+              <span class="pill pill-muted">Other existing systems</span>
+            </div>
+            <h2 class="h-slide max-w-4xl">
+              The scanner suite finds known patterns.
+              <span class="text-accent">Someone still has to attack you.</span>
+            </h2>
+            <p class="p-lead mt-3 max-w-3xl">
+              Other existing systems are strong at scanning code for known
+              vulnerability classes and filing them in a dashboard. They stop
+              there. Feluda reads the change, hunts it, and then attacks what
+              the change deployed.
+            </p>
+          </div>
+
+          <div class="mt-7 grid flex-1 grid-cols-2 gap-12">
+            <!-- Left: what they do -->
+            <div class="reveal flex flex-col">
+              <div class="mb-4 flex items-center justify-between">
+                <h3 class="h-sub text-ink-muted">Other existing systems</h3>
+                <span class="pill pill-muted">scan &amp; report</span>
+              </div>
+
+              <div class="rows" style="border-top: 1px solid var(--edge)">
+                <div class="p-body">
+                  <span class="text-ink">Broad scanner coverage</span> — source,
+                  dependencies, containers, infrastructure and secrets, all under
+                  one licence
+                </div>
+                <div class="p-body">
+                  <span class="text-ink">Pull-request gating</span> — findings and
+                  proposed fixes surfaced at the merge request
+                </div>
+                <div class="p-body">
+                  <span class="text-ink">AI triage and remediation</span> — findings
+                  ranked by risk, fixes proposed for review
+                </div>
+                <div class="p-body">
+                  <span class="text-ink">Dynamic testing exists</span> — but as a
+                  separate scanner product, on a separate schedule
+                </div>
+                <div class="p-body">
+                  <span class="text-ink">Deep catalogue</span> — a large body of
+                  CWE and CVE detection rules
+                </div>
+              </div>
+
+              <div class="panel mt-auto mb-4">
+                <div class="tag mb-2">The honest part</div>
+                <p class="p-body">
+                  This is genuinely good technology, and it is the right answer to
+                  "is this code vulnerable?"
+                </p>
+              </div>
+            </div>
+
+            <!-- Right: what they cannot do -->
+            <div class="reveal flex flex-col">
+              <div class="mb-4 flex items-center justify-between">
+                <h3 class="h-sub text-accent">Feluda</h3>
+                <span class="pill pill-accent">review &amp; attack</span>
+              </div>
+
+              <div class="rows" style="border-top: 1px solid var(--ac-edge)">
+                <div class="p-body text-ink">
+                  <span class="text-accent">Reads the whole repository</span>, not one
+                  file at a time — so reachability is known, not guessed
+                </div>
+                <div class="p-body text-ink">
+                  <span class="text-accent">Six specialists in parallel</span> on one
+                  change, each with its own reasoning and its own evidence
+                </div>
+                <div class="p-body text-ink">
+                  <span class="text-accent">Attacks the running system</span> — a
+                  black-box probe of the deployed URL, the way an outsider would
+                </div>
+                <div class="p-body text-ink">
+                  <span class="text-accent">Tests behind the login</span> — session
+                  state, privilege boundaries and authenticated flows
+                </div>
+                <div class="p-body text-ink">
+                  <span class="text-accent">Adversarial tradecraft</span> — lateral
+                  movement, persistence, command and control, scoped to your estate
+                </div>
+              </div>
+
+              <div class="panel panel-accent mt-auto mb-4">
+                <div class="tag tag-accent mb-2">The structural difference</div>
+                <p class="p-body text-ink">
+                  A scanner answers "what does this code look like?" Feluda
+                  answers "what can someone actually do to it?" — then proves it
+                  and hands you the fix.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Differentiation</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">07</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 8 — COVERAGE OVER TIME — DIAGRAM
+             Layout: full-bleed chart over a ruled annotation rail.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide dense" data-slide="8" aria-label="Coverage over time">
+          <div class="reveal">
+            <p class="eyebrow mb-3">Why the calendar fails</p>
+            <h2 class="h-slide max-w-4xl">
+              Risk compounds. Coverage doesn't.
+            </h2>
+          </div>
+
+          <!-- ── Diagram ──────────────────────────────────────────────── -->
+          <div class="mt-6 flex-1 min-h-0">
+            <svg
+              class="dg"
+              viewBox="0 0 1130 386"
+              role="img"
+              aria-label="Two-zone timeline chart. The top track shows Feluda's continuous coverage as an unbroken bar across all 365 days, against a single one-day spike for the traditional annual pentest. The lower chart shows unexamined change accumulating steadily through the year, with only a sliver caught at the pentest point and every merge after it shipping unexamined."
+            >
+              <defs>
+                <linearGradient id="risk-fill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--danger)" stop-opacity="0.30" />
+                  <stop offset="100%" stop-color="var(--danger)" stop-opacity="0.02" />
+                </linearGradient>
+                <marker
+                  id="ah-cov"
+                  viewBox="0 0 10 10"
+                  refX="9"
+                  refY="5"
+                  markerWidth="7"
+                  markerHeight="7"
+                  orient="auto-start-reverse"
+                >
+                  <path class="dg-arrow-accent" d="M 0 0 L 10 5 L 0 10 z" />
+                </marker>
+              </defs>
+
+              <!-- ══ ZONE A — COVERAGE TRACK ══════════════════════════ -->
+              <text class="dg-mono" x="0" y="14">COVERAGE</text>
+              <text class="dg-mono" x="1130" y="14" text-anchor="end">
+                <tspan class="dg-accent">FELUDA</tspan> · EVERY PUSH
+              </text>
+
+              <line class="dg-rail" x1="70" y1="96" x2="1110" y2="96" />
+
+              <!-- Feluda: a continuous, unbroken coverage bar -->
+              <rect class="dg-plateau" x="70" y="34" width="1040" height="20" rx="10" />
+              <path class="dg-line-accent" d="M 70 44 L 1110 44" marker-end="url(#ah-cov)" />
+              <text class="dg-label-sm dg-accent" x="70" y="28">
+                Feluda — every commit, every deploy, all 365 days
+              </text>
+
+              <!-- Traditional: a single spike, one day wide -->
+              <g>
+                <rect class="dg-gap-band" x="540" y="34" width="22" height="20" rx="4" />
+                <path
+                  d="M 551 24 L 551 78"
+                  stroke="var(--warn)"
+                  stroke-width="2"
+                  fill="none"
+                />
+                <circle cx="551" cy="78" r="5" style="fill: var(--warn)" />
+                <text
+                  class="dg-label-sm"
+                  x="551"
+                  y="112"
+                  text-anchor="middle"
+                  style="fill: var(--warn)"
+                >
+                  Annual pentest — one day
+                </text>
+                <text class="dg-mono-sm dg-danger" x="551" y="126" text-anchor="middle">
+                  364 days unwatched
+                </text>
+              </g>
+
+              <line class="dg-divider" x1="0" y1="146" x2="1130" y2="146" />
+
+              <!-- ══ ZONE B — UNEXAMINED CHANGE ═══════════════════════ -->
+              <text class="dg-mono" x="0" y="170">UNEXAMINED CHANGE — CUMULATIVE</text>
+
+              <!-- Plot frame -->
+              <line class="dg-rail" x1="70" y1="352" x2="1110" y2="352" />
+              <line class="dg-rail" x1="70" y1="186" x2="70" y2="352" />
+
+              <!-- Gridlines -->
+              <g class="dg-rail-faint">
+                <line x1="70" y1="288" x2="1110" y2="288" />
+                <line x1="70" y1="224" x2="1110" y2="224" />
+              </g>
+              <g class="dg-mono-sm dg-faint" text-anchor="end">
+                <text x="62" y="292">low</text>
+                <text x="62" y="228">med</text>
+                <text x="62" y="192">high</text>
+              </g>
+
+              <!-- Month ticks -->
+              <g class="dg-mono-sm dg-faint" text-anchor="middle">
+                <text x="70" y="372">J</text>
+                <text x="193" y="372">F</text>
+                <text x="316" y="372">M</text>
+                <text x="439" y="372">A</text>
+                <text x="562" y="372">M</text>
+                <text x="685" y="372">J</text>
+                <text x="808" y="372">J</text>
+                <text x="931" y="372">A</text>
+                <text x="1054" y="372">S</text>
+              </g>
+
+              <!-- Risk accumulation curve -->
+              <path
+                d="M 70 330 C 240 314, 400 282, 560 248 C 720 214, 880 190, 1110 176 L 1110 352 L 70 352 Z"
+                fill="url(#risk-fill)"
+                stroke="none"
+              />
+              <path
+                d="M 70 330 C 240 314, 400 282, 560 248 C 720 214, 880 190, 1110 176"
+                stroke="var(--danger)"
+                stroke-width="2.25"
+                fill="none"
+              />
+
+              <!-- The pentest catches a sliver at the point it lands -->
+              <g>
+                <path
+                  d="M 551 248 L 551 176"
+                  stroke="var(--warn)"
+                  stroke-width="2.25"
+                  fill="none"
+                />
+                <circle cx="551" cy="176" r="5" style="fill: var(--warn)" />
+                <text class="dg-mono-sm" x="563" y="164" style="fill: var(--warn)">
+                  caught here
+                </text>
+              </g>
+
+              <!-- The blind band: everything after the pentest -->
+              <g>
+                <line
+                  class="dg-rail"
+                  x1="570"
+                  y1="352"
+                  x2="570"
+                  y2="240"
+                  stroke-dasharray="3 4"
+                />
+                <text class="dg-mono-sm dg-danger" x="586" y="272">
+                  every merge after this point ships unexamined
+                </text>
+                <text class="dg-mono-sm dg-faint" x="586" y="288">
+                  until the next engagement, a year away
+                </text>
+              </g>
+            </svg>
+          </div>
+
+          <!-- ── Takeaway strip: ruled columns, no boxes ────────────────── -->
+          <div class="mt-5 hair-grid grid-cols-3">
+            <div>
+              <div class="tag mb-2">The multiplier</div>
+              <p class="p-body">
+                200 PRs a year, one pentest. The gap between what you build and
+                what you examined is not 200× — it is 200 separate unknowns.
+              </p>
+            </div>
+            <div>
+              <div class="tag mb-2">The blind band</div>
+              <p class="p-body">
+                A finding fixed on day 400 protects the version that existed on
+                day 400. The 199 releases before it shipped anyway.
+              </p>
+            </div>
+            <div>
+              <div class="tag tag-accent mb-2">What changes</div>
+              <p class="p-body text-ink">
+                Coverage becomes a property of the pipeline, not a property of
+                the calendar. Same effort, different shape.
+              </p>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Coverage</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">08</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 9 — HOW A CHANGE GETS REVIEWED
+             Layout: a horizontal flow with an arrow spine; the agent fan-out
+             rendered as a vertical stack of chips.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide" data-slide="9" aria-label="How a change gets reviewed">
+          <div class="grid-bg absolute inset-0"></div>
+          <div class="ghost-num">09</div>
+
+          <div class="relative reveal flex h-full flex-col">
+            <p class="eyebrow mb-4">How It Works</p>
+            <h2 class="h-slide max-w-4xl">One change in, one review out</h2>
+
+            <!-- Flow spine -->
+            <div class="mt-9 grid grid-cols-[1fr_1.5fr_1fr] gap-10 items-start">
+              <!-- Trigger -->
+              <div>
+                <div class="rule-accent mb-5"></div>
+                <div class="pill pill-accent mb-3">Trigger</div>
+                <h3 class="h-sub mb-3">Every push, every deploy</h3>
+                <p class="p-body">
+                  Connect a repository once. Every pull request, every merge and
+                  every release triggers the review — no schedule, no calendar,
+                  no one remembering to run it.
+                </p>
+              </div>
+
+              <!-- The fan-out -->
+              <div>
+                <div class="rule-accent mb-5"></div>
+                <div class="pill pill-accent mb-3">The fan-out</div>
+                <h3 class="h-sub mb-4">Six specialists, in parallel</h3>
+
+                <div class="flex flex-wrap gap-2">
+                  <span class="pill pill-muted">supply-chain</span>
+                  <span class="pill pill-muted">white-box</span>
+                  <span class="pill pill-muted">secrets</span>
+                  <span class="pill pill-muted">malware</span>
+                  <span class="pill pill-muted">network</span>
+                  <span class="pill pill-accent">black-box</span>
+                </div>
+
+                <p class="p-mono mt-4 text-ink-faint">
+                  one change · six specialists · one review · one retry path
+                </p>
+              </div>
+
+              <!-- Outcome -->
+              <div>
+                <div class="rule-accent mb-5"></div>
+                <div class="pill pill-success mb-3">Outcome</div>
+                <h3 class="h-sub mb-3">A pull request you can act on</h3>
+                <p class="p-body">
+                  Code quality and security findings land in the same review, with
+                  severity, evidence and a ready-to-merge fix attached.
+                </p>
+              </div>
+            </div>
+
+            <!-- Connector -->
+            <div class="mt-8 flex items-center gap-3">
+              <span class="h-px flex-1 bg-[color:var(--edge)]"></span>
+              <svg width="360" height="18" viewBox="0 0 360 18" class="shrink-0" aria-hidden="true">
+                <line x1="0" y1="9" x2="342" y2="9" class="flow-line" />
+                <path d="M 342 3 L 352 9 L 342 15 z" fill="var(--ac)" opacity="0.8" />
+              </svg>
+              <span class="h-px flex-1 bg-[color:var(--edge)]"></span>
+            </div>
+
+            <!-- Four principles, ruled -->
+            <div class="mt-8 hair-grid grid-cols-4">
+              <div>
+                <div class="tag mb-2">Isolation</div>
+                <p class="p-body">
+                  Each specialist runs in its own isolated environment, so one
+                  crash cannot take the rest of the review with it.
+                </p>
+              </div>
+              <div>
+                <div class="tag mb-2">Deterministic first</div>
+                <p class="p-body">
+                  A rule-based floor runs first. The model then reasons over what
+                  the rules found — and what they missed.
+                </p>
+              </div>
+              <div>
+                <div class="tag mb-2">Grounded</div>
+                <p class="p-body">
+                  Every finding's path must appear in a real diff header.
+                  Hallucinated paths are dropped.
+                </p>
+              </div>
+              <div>
+                <div class="tag mb-2">One place to read</div>
+                <p class="p-body">
+                  Code quality, security and dependency findings arrive together,
+                  in the review where the developer already works.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Architecture</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">09</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 10 — CODE REVIEW CORE
+             Layout: asymmetric 46/54. Left is a live terminal mock; right is
+             a ruled output list.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide dense" data-slide="10" aria-label="Code review core">
+          <div class="ghost-num">10</div>
+
+          <div class="reveal">
+            <p class="eyebrow mb-4">Part One</p>
+            <h2 class="h-slide max-w-4xl">Code review that reads the whole repository</h2>
+          </div>
+
+          <div class="mt-8 grid grid-cols-[46fr_54fr] gap-12">
+            <!-- Left: terminal + capability -->
+            <div class="reveal">
+              <div class="term mb-6">
+                <div class="term-bar">
+                  <span class="live-dot" style="width: 6px; height: 6px"></span>
+                  <span>feluda · review</span>
+                  <span class="ml-auto text-ink-faint">repo: acme/billing</span>
+                </div>
+                <div class="term-body">
+                  <div class="row"><span class="sig">$</span><span class="cmd">feluda review --repo acme/billing</span></div>
+                  <div class="row"><span class="sig">›</span><span class="dim">reading repository…</span></div>
+                  <div class="row"><span class="sig">›</span><span class="dim">files indexed</span> <span class="key">14,208</span></div>
+                  <div class="row"><span class="sig">›</span><span class="dim">changed since</span> <span class="key">a3f19c2</span> <span class="dim">→</span> <span class="key">b71d04e</span></div>
+                  <div class="row"><span class="sig">›</span><span class="dim">context gathered</span> <span class="key">6 files</span></div>
+                  <div class="row"><span class="sig">›</span><span class="dim">reviewed in</span> <span class="ok">1.9s</span></div>
+                  <div class="row"><span class="sig">›</span><span class="ok">✓ review ready · acme/billing</span></div>
+                </div>
+              </div>
+
+              <div class="hair-grid grid-cols-2 gap-y-4">
+                <div>
+                  <div class="p-mono text-ink">Full repository</div>
+                  <p class="p-body mt-1">
+                    Every file, every commit, indexed once — so a review can
+                    reach beyond the diff.
+                  </p>
+                </div>
+                <div>
+                  <div class="p-mono text-ink">Semantic search</div>
+                  <p class="p-body mt-1">
+                    Context is retrieved by meaning, not by matching a filename
+                    pattern.
+                  </p>
+                </div>
+                <div>
+                  <div class="p-mono text-ink">Instant re-review</div>
+                  <p class="p-body mt-1">
+                    Push again and the review updates against the new state, in
+                    seconds.
+                  </p>
+                </div>
+                <div>
+                  <div class="p-mono text-ink">One record</div>
+                  <p class="p-body mt-1">
+                    Repositories, pull requests, reviews and findings stay
+                    together and exportable.
+                  </p>
+                </div>
+              </div>
+
+              <div class="panel panel-accent mt-6">
+                <div class="tag tag-accent mb-2">Diff strategy</div>
+                <p class="p-body">
+                  A content-hash diff against the last reviewed commit. Only
+                  changed files are re-read — the difference between a 10k-file
+                  repo taking minutes and taking seconds.
+                </p>
+              </div>
+            </div>
+
+            <!-- Right: outputs -->
+            <div class="reveal">
+              <div class="mb-4 flex items-center justify-between">
+                <h3 class="h-sub">What the reviewer produces</h3>
+                <span class="pill pill-accent">4 artefacts</span>
+              </div>
+
+              <div class="rows">
+                <div class="num-row">
+                  <div class="n">01</div>
+                  <div>
+                    <h3 class="h-sub mb-1">Summary</h3>
+                    <p class="p-body">
+                      What changed, why, and what a reviewer should look at first.
+                    </p>
+                  </div>
+                </div>
+                <div class="num-row">
+                  <div class="n">02</div>
+                  <div>
+                    <h3 class="h-sub mb-1">Inline findings</h3>
+                    <p class="p-body">
+                      File-and-line issues posted as review comments, with severity
+                      and evidence.
+                    </p>
+                  </div>
+                </div>
+                <div class="num-row">
+                  <div class="n">03</div>
+                  <div>
+                    <h3 class="h-sub mb-1">Sequence diagram</h3>
+                    <p class="p-body">
+                      A forced tool call that reconstructs the control flow the
+                      change introduces.
+                    </p>
+                  </div>
+                </div>
+                <div class="num-row">
+                  <div class="n">04</div>
+                  <div>
+                    <h3 class="h-sub mb-1">Check run</h3>
+                    <p class="p-body">
+                      A merge gate that speaks the code host's native status API —
+                      so branch protection just works.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Code Review</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">10</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 11 — CODE QUALITY + SAST + SECRETS
+             Layout: three staggered horizontal lanes, each offset from the
+             last — a descending staircase rather than a card row.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide" data-slide="11" aria-label="SAST, secrets, code quality">
+          <div class="ghost-num">11</div>
+
+          <div class="reveal">
+            <p class="eyebrow mb-4">Foundations</p>
+            <h2 class="h-slide max-w-4xl">Three disciplines, one pass over the diff</h2>
+          </div>
+
+          <div class="mt-8 flex flex-1 flex-col justify-center gap-4">
+            <!-- Lane 1 -->
+            <div class="reveal card-flat flex items-stretch overflow-hidden">
+              <div
+                class="flex w-[168px] shrink-0 flex-col justify-center border-r border-[color:var(--edge)] p-5"
+              >
+                <div class="pill pill-accent mb-2 w-fit">Static analysis</div>
+                <div class="h-sub">SAST</div>
+              </div>
+              <div class="flex flex-1 flex-col justify-center p-5">
+                <p class="p-body mb-3">
+                  Scan source for injection, XSS and insecure patterns. Every
+                  finding ships with an AI Autofix prompt.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="pill pill-muted">SQL injection</span>
+                  <span class="pill pill-muted">XSS</span>
+                  <span class="pill pill-muted">SSRF</span>
+                  <span class="pill pill-muted">Path traversal</span>
+                  <span class="pill pill-muted">Insecure deser.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Lane 2 -->
+            <div class="reveal card-flat flex items-stretch overflow-hidden">
+              <div
+                class="flex w-[168px] shrink-0 flex-col justify-center border-r border-[color:var(--edge)] p-5"
+              >
+                <div class="pill pill-warn mb-2 w-fit">Credential hygiene</div>
+                <div class="h-sub">Secrets</div>
+              </div>
+              <div class="flex flex-1 flex-col justify-center p-5">
+                <p class="p-body mb-3">
+                  Hardcoded API keys, tokens, passwords and credentials — in the
+                  working tree and in commit history.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="pill pill-muted">AWS keys</span>
+                  <span class="pill pill-muted">GitHub tokens</span>
+                  <span class="pill pill-muted">Slack tokens</span>
+                  <span class="pill pill-muted">Entropy scan</span>
+                  <span class="pill pill-muted">Git history</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Lane 3 -->
+            <div class="reveal card-flat flex items-stretch overflow-hidden">
+              <div
+                class="flex w-[168px] shrink-0 flex-col justify-center border-r border-[color:var(--edge)] p-5"
+              >
+                <div class="pill pill-info mb-2 w-fit">Correctness</div>
+                <div class="h-sub">Code quality</div>
+              </div>
+              <div class="flex flex-1 flex-col justify-center p-5">
+                <p class="p-body mb-3">
+                  Logical correctness, semantic errors and style issues — plus
+                  package vulnerabilities and inline security exposure.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="pill pill-muted">Logic errors</span>
+                  <span class="pill pill-muted">Semantics</span>
+                  <span class="pill pill-muted">Style</span>
+                  <span class="pill pill-muted">Package vulns</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom emphasis bar -->
+          <div class="reveal card-accent mt-7 flex items-center gap-6 p-5">
+            <div class="pill pill-accent shrink-0">Deterministic first</div>
+            <p class="p-body text-ink">
+              A rule-based floor catches what rules are good at — hardcoded
+              credentials, lockfile drift, SQL injection patterns, reverse shells.
+              The model then reasons over what the rules found and what they
+              missed.
+            </p>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Foundations</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">11</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 12 — SIX SECURITY AGENTS
+             Layout: an asymmetric bento — one wide live-target panel, five
+             diff agents in a tight ruled column.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide" data-slide="12" aria-label="Six security agents">
+          <div class="grid-bg absolute inset-0"></div>
+          <div class="ghost-num">12</div>
+
+          <div class="relative reveal flex h-full flex-col">
+            <p class="eyebrow mb-4">Part Two</p>
+            <h2 class="h-slide max-w-4xl">Six specialised agents, one change</h2>
+            <p class="p-lead mt-4 max-w-3xl">
+              Five read the diff. One reads the running system. Each is a separate
+              specialist, a separate environment, and a separate failure domain.
+            </p>
+
+            <div class="mt-8 grid flex-1 grid-cols-[1fr_1.9fr] gap-10">
+              <!-- The live target — the odd one out -->
+              <div class="flex flex-col justify-center">
+                <div class="card-accent flex h-full flex-col justify-center p-6">
+                  <div class="mb-4 flex items-center justify-between">
+                    <span class="pill pill-danger">black-box</span>
+                    <span class="live-dot"></span>
+                  </div>
+                  <h3 class="h-sub mb-3">The one that reads no source</h3>
+                  <p class="p-body">
+                    It probes the deployed URL the way an outsider would — security
+                    headers, cookies, CORS, TLS, version disclosure and exposed
+                    paths.
+                  </p>
+                  <div class="mt-5">
+                    <span class="tag tag-accent">live HTTP · SSRF-guarded</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- The five diff readers -->
+              <div>
+                <div class="mb-3 flex items-center justify-between">
+                  <span class="tag">Five diff readers</span>
+                  <span class="tag">one message each</span>
+                </div>
+
+                <div class="rows">
+                  <div class="flex items-start justify-between gap-6">
+                    <div>
+                      <h3 class="h-sub mb-1">supply-chain</h3>
+                      <p class="p-body">
+                        Dependency audit, advisory lookup, lockfile drift, SBOM,
+                        CI/CD pipeline and artifact integrity.
+                      </p>
+                    </div>
+                    <span class="pill pill-muted shrink-0">diff</span>
+                  </div>
+
+                  <div class="flex items-start justify-between gap-6">
+                    <div>
+                      <h3 class="h-sub mb-1">white-box</h3>
+                      <p class="p-body">
+                        Taint analysis, dataflow, SAST rules, OWASP Top 10, auth and
+                        authorisation flaws, crypto misuse.
+                      </p>
+                    </div>
+                    <span class="pill pill-muted shrink-0">diff</span>
+                  </div>
+
+                  <div class="flex items-start justify-between gap-6">
+                    <div>
+                      <h3 class="h-sub mb-1">secrets</h3>
+                      <p class="p-body">
+                        Entropy scan, regex leak detection, git history forensics,
+                        IAM, email security and DLP.
+                      </p>
+                    </div>
+                    <span class="pill pill-muted shrink-0">diff</span>
+                  </div>
+
+                  <div class="flex items-start justify-between gap-6">
+                    <div>
+                      <h3 class="h-sub mb-1">malware</h3>
+                      <p class="p-body">
+                        YARA rules, script behaviour analysis, binary
+                        classification, ransomware and firmware inspection.
+                      </p>
+                    </div>
+                    <span class="pill pill-muted shrink-0">diff</span>
+                  </div>
+
+                  <div class="flex items-start justify-between gap-6">
+                    <div>
+                      <h3 class="h-sub mb-1">network</h3>
+                      <p class="p-body">
+                        SSRF detection, TLS verification, URL reputation, CSP audit,
+                        container and zero-trust posture.
+                      </p>
+                    </div>
+                    <span class="pill pill-muted shrink-0">diff</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Security Agents</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">12</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 13 — WHITE BOX V1
+             Layout: a 3×3 hairline matrix — nine capabilities as cells in a grid
+             ruled by lines, with the taint model as a footer note.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide dense" data-slide="13" aria-label="White box V1">
+          <div class="ghost-num">13</div>
+
+          <div class="reveal">
+            <div class="mb-4 flex items-center gap-4">
+              <p class="eyebrow">White Box · V1</p>
+              <span class="pill pill-accent">Core engine</span>
+            </div>
+            <h2 class="h-slide max-w-4xl">The core white-box engine</h2>
+            <p class="p-lead mt-3 max-w-3xl">
+              AI pentest in white-box mode using source code and OpenAPI specs
+              for attack-surface mapping.
+            </p>
+          </div>
+
+          <!-- 3×3 hairline matrix -->
+          <div class="reveal mt-7 flex-1">
+            <div class="matrix h-full grid-cols-3 grid-rows-3">
+              <div class="num-row">
+                <div class="n">01</div>
+                <div>
+                  <h3 class="h-sub">taintAnalysis</h3>
+                  <p class="p-body mt-1">Tracks untrusted input flowing through the code.</p>
+                </div>
+              </div>
+              <div class="num-row">
+                <div class="n">02</div>
+                <div>
+                  <h3 class="h-sub">sastRules</h3>
+                  <p class="p-body mt-1">Static analysis rule checks.</p>
+                </div>
+              </div>
+              <div class="num-row">
+                <div class="n">03</div>
+                <div>
+                  <h3 class="h-sub">owaspTopTen</h3>
+                  <p class="p-body mt-1">OWASP Top 10 coverage.</p>
+                </div>
+              </div>
+              <div class="num-row">
+                <div class="n">04</div>
+                <div>
+                  <h3 class="h-sub">dataflow</h3>
+                  <p class="p-body mt-1">Data flow analysis across the call graph.</p>
+                </div>
+              </div>
+              <div class="num-row">
+                <div class="n">05</div>
+                <div>
+                  <h3 class="h-sub">authChecks</h3>
+                  <p class="p-body mt-1">Authentication and authorisation flaws.</p>
+                </div>
+              </div>
+              <div class="num-row">
+                <div class="n">06</div>
+                <div>
+                  <h3 class="h-sub">inputValidation</h3>
+                  <p class="p-body mt-1">Missing or broken input validation.</p>
+                </div>
+              </div>
+              <div class="num-row">
+                <div class="n">07</div>
+                <div>
+                  <h3 class="h-sub">insecureCrypto</h3>
+                  <p class="p-body mt-1">Weak cryptography usage.</p>
+                </div>
+              </div>
+              <div class="num-row">
+                <div class="n">08</div>
+                <div>
+                  <h3 class="h-sub">deserialization</h3>
+                  <p class="p-body mt-1">Unsafe deserialization paths.</p>
+                </div>
+              </div>
+              <div class="num-row">
+                <div class="n">09</div>
+                <div>
+                  <h3 class="h-sub">unsafeFunctions</h3>
+                  <p class="p-body mt-1">Known-unsafe API calls.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="reveal card-accent mt-6 flex items-center gap-6 p-5">
+            <div class="pill pill-accent shrink-0">Taint model</div>
+            <p class="p-body text-ink">
+              Sources like request bodies, query parameters and CLI args are tracked
+              into their bindings. When a tainted value reaches a dangerous sink,
+              severity escalates to critical. <span class="p-mono text-accent">nosec</span>
+              and <span class="p-mono text-accent">feluda-ignore</span> suppress
+              cleanly.
+            </p>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">White Box · V1</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">13</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 14 — WHITE BOX V2 (API)
+             Layout: asymmetric split. Left is a ruled hunt-list; right is a
+             terminal-style companion panel.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide dense" data-slide="14" aria-label="White box V2 API security">
+          <div class="ghost-num">14</div>
+
+          <div class="reveal">
+            <div class="mb-4 flex items-center gap-4">
+              <p class="eyebrow">White Box · V2</p>
+              <span class="pill pill-accent">API security</span>
+            </div>
+            <h2 class="h-slide max-w-4xl">Deep code-level API security</h2>
+          </div>
+
+          <div class="mt-7 grid flex-1 grid-cols-[1.15fr_1fr] gap-12">
+            <!-- Left: what it hunts -->
+            <div class="reveal flex flex-col">
+              <h3 class="h-sub mb-4">The classes it hunts</h3>
+              <div class="rows">
+                <div class="p-body">Broken object-level authorisation — BOLA, BOPLA</div>
+                <div class="p-body">Broken function-level authorisation</div>
+                <div class="p-body">Excessive data exposure in API responses</div>
+                <div class="p-body">Mass assignment and unvalidated properties</div>
+                <div class="p-body">JWT algorithm confusion attacks</div>
+                <div class="p-body">API injection and shadow endpoints</div>
+                <div class="p-body">OAuth 2.0 implementation flaws</div>
+                <div class="p-body">WebSocket API security</div>
+              </div>
+
+              <div class="mt-auto">
+                <div class="tag mb-3">The controls it verifies</div>
+                <div class="flex flex-wrap gap-2">
+                  <span class="pill pill-muted">Rate limiting</span>
+                  <span class="pill pill-muted">Schema validation</span>
+                  <span class="pill pill-muted">API key security</span>
+                  <span class="pill pill-muted">Gateway controls</span>
+                  <span class="pill pill-muted">Threat protection</span>
+                  <span class="pill pill-muted">Posture management</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: companion terminal -->
+            <div class="reveal flex flex-col">
+              <div class="mb-4 flex items-center justify-between">
+                <h3 class="h-sub">API discovery &amp; fuzzing</h3>
+                <span class="pill pill-info">Companion</span>
+              </div>
+
+              <div class="term flex-1">
+                <div class="term-bar">
+                  <span class="live-dot" style="width: 6px; height: 6px"></span>
+                  <span>discover · fuzz</span>
+                  <span class="ml-auto text-ink-faint">rest + graphql</span>
+                </div>
+                <div class="term-body">
+                  <div class="row"><span class="sig">›</span><span class="dim">specs</span> <span class="key">openapi.yaml</span></div>
+                  <div class="row"><span class="sig">›</span><span class="dim">live</span> <span class="key">https://api.acme.dev</span></div>
+                  <div class="row"><span class="sig">›</span><span class="dim">undocumented</span> <span class="warn">17 routes</span></div>
+                  <div class="row"><span class="sig">›</span><span class="dim">fuzzing</span> <span class="dim">params · headers · body</span></div>
+                  <div class="row"><span class="sig">›</span><span class="dim">authz</span> <span class="dim">checked per response</span></div>
+                  <div class="row"><span class="sig">›</span><span class="warn">BOLA</span> <span class="dim">/v1/invoices/{id}</span></div>
+                  <div class="row"><span class="sig">›</span><span class="dim">mass-assign</span> <span class="warn">/v1/users</span></div>
+                  <div class="row"><span class="sig">›</span><span class="warn">over-exposure</span> <span class="dim">/v1/users/:id</span></div>
+                  <div class="row"><span class="sig">›</span><span class="ok">✓ 8 findings · 3 critical</span></div>
+                </div>
+              </div>
+
+              <div class="panel panel-accent mt-5">
+                <div class="tag tag-accent mb-2">Why it matters</div>
+                <p class="p-body">
+                  An undocumented endpoint with no authorisation check is the
+                  single most common real-world API breach path. Most scanners
+                  never see it, because it is not in the spec.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">White Box · V2 · API</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">14</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 15 — WHITE BOX V2 (WEB APP)
+             Layout: a four-column catalogue rendered as ruled columns with
+             staggered vertical offsets — a hanging list, not a card row.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide dense" data-slide="15" aria-label="White box V2 web application security">
+          <div class="ghost-num">15</div>
+
+          <div class="reveal">
+            <div class="mb-4 flex items-center gap-4">
+              <p class="eyebrow">White Box · V2</p>
+              <span class="pill pill-accent">Web application</span>
+            </div>
+            <h2 class="h-slide max-w-4xl">The full web-application exploit catalogue</h2>
+            <p class="p-lead mt-3 max-w-3xl">
+              The static-analysis subset that a pentester would work through by
+              hand — automated, and run on every change.
+            </p>
+          </div>
+
+          <div class="mt-7 grid flex-1 grid-cols-4 gap-8">
+            <!-- Column 1 -->
+            <div class="reveal">
+              <div class="rule-accent mb-4"></div>
+              <div class="tag tag-accent mb-3">Access</div>
+              <div class="space-y-2">
+                <div class="p-body">IDOR exploitation</div>
+                <div class="p-body">Forced-browsing bypass</div>
+                <div class="p-body">Broken access control</div>
+                <div class="p-body">Broken link hijacking</div>
+                <div class="p-body">Open redirect</div>
+              </div>
+            </div>
+
+            <!-- Column 2 — offset down -->
+            <div class="reveal pt-8">
+              <div class="rule-accent mb-4"></div>
+              <div class="tag tag-accent mb-3">Injection</div>
+              <div class="space-y-2">
+                <div class="p-body">Template injection — SSTI</div>
+                <div class="p-body">XSS testing</div>
+                <div class="p-body">XXE injection</div>
+                <div class="p-body">XML injection</div>
+                <div class="p-body">Email header injection</div>
+                <div class="p-body">Host header injection</div>
+              </div>
+            </div>
+
+            <!-- Column 3 — offset up -->
+            <div class="reveal">
+              <div class="rule-accent mb-4"></div>
+              <div class="tag tag-accent mb-3">Logic &amp; data</div>
+              <div class="space-y-2">
+                <div class="p-body">Business logic flaws</div>
+                <div class="p-body">Race conditions</div>
+                <div class="p-body">Mass assignment in REST</div>
+                <div class="p-body">Prototype pollution</div>
+                <div class="p-body">Type juggling</div>
+                <div class="p-body">Sensitive data exposure</div>
+              </div>
+            </div>
+
+            <!-- Column 4 — offset down -->
+            <div class="reveal pt-8">
+              <div class="rule-accent mb-4"></div>
+              <div class="tag tag-accent mb-3">Transport &amp; cache</div>
+              <div class="space-y-2">
+                <div class="p-body">CSP bypass</div>
+                <div class="p-body">CORS misconfiguration</div>
+                <div class="p-body">CSRF simulation</div>
+                <div class="p-body">Web cache deception</div>
+                <div class="p-body">Web cache poisoning</div>
+                <div class="p-body">HTTP parameter pollution</div>
+                <div class="p-body">Directory traversal</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="reveal mt-6 hair-grid grid-cols-3">
+            <div>
+              <div class="tag mb-2">Authentication</div>
+              <p class="p-body">JWT vulnerabilities, OAuth misconfiguration, WebSocket auth.</p>
+            </div>
+            <div>
+              <div class="tag mb-2">Header audit</div>
+              <p class="p-body">Security headers audit across every changed response path.</p>
+            </div>
+            <div>
+              <div class="tag mb-2">SSRF</div>
+              <p class="p-body">Server-side request forgery, including internal target reachability.</p>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">White Box · V2 · Web App</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">15</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 16 — CRYPTO + RASP
+             Layout: a dense 4×2 hairline matrix on the left, a single
+             tall accent panel on the right — a bento pair.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide dense" data-slide="16" aria-label="White box V2 cryptography and RASP">
+          <div class="ghost-num">16</div>
+
+          <div class="reveal">
+            <div class="mb-4 flex items-center gap-4">
+              <p class="eyebrow">White Box · V2</p>
+              <span class="pill pill-accent">Crypto &amp; RASP</span>
+            </div>
+            <h2 class="h-slide max-w-4xl">Cryptography and runtime self-protection</h2>
+          </div>
+
+          <div class="mt-7 grid flex-1 grid-cols-[1.6fr_1fr] gap-10">
+            <!-- Left: crypto matrix -->
+            <div class="reveal flex flex-col">
+              <div class="mb-4 flex items-center gap-3">
+                <span class="pill pill-accent">Crypto</span>
+                <span class="p-body">Usage analysis, not just pattern matching</span>
+              </div>
+
+              <div class="hair-grid grid-cols-2 gap-y-6">
+                <div>
+                  <div class="p-mono text-ink">Ed25519 signatures</div>
+                  <p class="p-body mt-1">Digital signature implementation review.</p>
+                </div>
+                <div>
+                  <div class="p-mono text-ink">RSA key management</div>
+                  <p class="p-body mt-1">Key pair generation, storage and rotation hygiene.</p>
+                </div>
+                <div>
+                  <div class="p-mono text-ink">Envelope encryption</div>
+                  <p class="p-body mt-1">AWS KMS envelope encryption correctness.</p>
+                </div>
+                <div>
+                  <div class="p-mono text-ink">AES at rest</div>
+                  <p class="p-body mt-1">Mode, IV and key handling for data at rest.</p>
+                </div>
+                <div>
+                  <div class="p-mono text-ink">End-to-end encryption</div>
+                  <p class="p-body mt-1">Messaging encryption design review.</p>
+                </div>
+                <div>
+                  <div class="p-mono text-ink">Cryptographic audit</div>
+                  <p class="p-body mt-1">Full application cryptographic posture.</p>
+                </div>
+                <div>
+                  <div class="p-mono text-ink">Zero-knowledge proof</div>
+                  <p class="p-body mt-1">ZKP authentication implementations.</p>
+                </div>
+                <div>
+                  <div class="p-mono text-ink">JWT signing</div>
+                  <p class="p-body mt-1">Signing and verification implementation review.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: RASP -->
+            <div class="reveal flex flex-col gap-5">
+              <div class="card-accent flex flex-1 flex-col justify-center p-6">
+                <div class="mb-4 flex items-center justify-between">
+                  <span class="pill pill-accent">RASP</span>
+                  <span class="live-dot"></span>
+                </div>
+                <h3 class="h-sub mb-3">Runtime application self-protection</h3>
+                <p class="p-body mb-5">
+                  Runtime Application Self-Protection closes the loop: the same
+                  findings that are reported statically are blocked in flight.
+                </p>
+                <div class="space-y-2.5">
+                  <div class="bul-tight">Blocks injection attempts at the call site</div>
+                  <div class="bul-tight">Intercepts path traversal and SSRF egress</div>
+                  <div class="bul-tight">Enforces response headers the app forgets</div>
+                  <div class="bul-tight">Records every block as evidence for the audit trail</div>
+                </div>
+              </div>
+
+              <div class="panel panel-accent">
+                <div class="tag tag-accent mb-2">Why this matters</div>
+                <p class="p-body">
+                  Static analysis tells you a vulnerability exists. Runtime
+                  protection means it cannot be exploited between the commit and
+                  the fix. Both ship from the same engine.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">White Box · V2 · Crypto</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">16</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 17 — WHITE BOX V3 (PIPELINE)
+             Layout: a four-station horizontal line, each station a ruled
+             column hanging beneath a shared axis.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide" data-slide="17" aria-label="White box V3 pipeline scanning">
+          <div class="ghost-num">17</div>
+
+          <div class="reveal">
+            <div class="mb-4 flex items-center gap-4">
+              <p class="eyebrow">White Box · V3</p>
+              <span class="pill pill-accent">Pipeline &amp; repository</span>
+            </div>
+            <h2 class="h-slide max-w-4xl">DevSecOps, without stitching five tools together</h2>
+          </div>
+
+          <!-- Shared axis -->
+          <div class="reveal mt-9">
+            <div class="mb-0 h-px w-full bg-[color:var(--edge)]"></div>
+            <div class="grid grid-cols-4 gap-8">
+              <!-- Station 1 -->
+              <div class="pt-5">
+                <div class="mb-4 flex items-center gap-3">
+                  <span
+                    class="grid h-7 w-7 place-items-center rounded-md bg-[color:var(--ac-soft)] font-mono text-[11px] text-accent"
+                    >CI</span
+                  >
+                  <h3 class="h-sub">Pipeline</h3>
+                </div>
+                <div class="space-y-1.5">
+                  <div class="p-body">GitLab CI DevSecOps</div>
+                  <div class="p-body">GitHub Actions hardening</div>
+                  <div class="p-body">SAST in Actions</div>
+                  <div class="p-body">Policy-as-code with OPA</div>
+                  <div class="p-body">Code signing for artifacts</div>
+                </div>
+              </div>
+
+              <!-- Station 2 -->
+              <div class="pt-5">
+                <div class="mb-4 flex items-center gap-3">
+                  <span
+                    class="grid h-7 w-7 place-items-center rounded-md bg-[color:var(--ac-soft)] font-mono text-[11px] text-accent"
+                    >SC</span
+                  >
+                  <h3 class="h-sub">Scanning engines</h3>
+                </div>
+                <div class="space-y-1.5">
+                  <div class="p-body">Semgrep custom rules</div>
+                  <div class="p-body">OWASP ZAP DAST</div>
+                  <div class="p-body">Snyk SCA</div>
+                  <div class="p-body">Trivy container &amp; IaC</div>
+                  <div class="p-body">Aqua container scan</div>
+                </div>
+              </div>
+
+              <!-- Station 3 -->
+              <div class="pt-5">
+                <div class="mb-4 flex items-center gap-3">
+                  <span
+                    class="grid h-7 w-7 place-items-center rounded-md bg-[color:var(--ac-soft)] font-mono text-[11px] text-accent"
+                    >SE</span
+                  >
+                  <h3 class="h-sub">Secrets</h3>
+                </div>
+                <div class="space-y-1.5">
+                  <div class="p-body">Gitleaks secret scanning</div>
+                  <div class="p-body">CI/CD secrets scanning</div>
+                  <div class="p-body">GitHub Advanced Security</div>
+                </div>
+              </div>
+
+              <!-- Station 4 -->
+              <div class="pt-5">
+                <div class="mb-4 flex items-center gap-3">
+                  <span
+                    class="grid h-7 w-7 place-items-center rounded-md bg-[color:var(--ac-soft)] font-mono text-[11px] text-accent"
+                    >TM</span
+                  >
+                  <h3 class="h-sub">Modelling</h3>
+                </div>
+                <div class="space-y-1.5">
+                  <div class="p-body">OWASP Threat Dragon</div>
+                  <div class="p-body">IaC security scanning</div>
+                  <div class="p-body">Container image hardening</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="reveal card-accent mt-8 flex items-center gap-6 p-6">
+            <div class="pill pill-accent shrink-0">The difference</div>
+            <p class="p-lead text-ink">
+              This is not "integrate Trivy." It is the
+              <em class="not-italic">design pattern</em> behind Trivy, Semgrep, Snyk
+              and ZAP — what to scan, where, how to gate, and how to keep the
+              result auditable. One engine, every engine's discipline.
+            </p>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">White Box · V3</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">17</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 18 — WHITE BOX V4 (RED TEAM)
+             Layout: an ATT&CK-style ladder — four ascending columns of
+             tactics, each column a ruled vertical list.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide dense" data-slide="18" aria-label="White box V4 red team"
+          style="--slide-accent: var(--danger)">
+          <div
+            class="bloom"
+            style="width: 520px; height: 520px; top: 40px; right: -190px; opacity: 0.08"
+          ></div>
+          <div class="ghost-num">18</div>
+
+          <div class="relative reveal flex h-full flex-col">
+            <div class="mb-4 flex items-center gap-4">
+              <p class="eyebrow">White Box · V4</p>
+              <span class="pill pill-danger">Red-team tradecraft</span>
+            </div>
+            <h2 class="h-slide max-w-4xl">Red team, encoded as tradecraft</h2>
+            <p class="p-lead mt-3 max-w-3xl">
+              The tradecraft of an adversary emulated — credential access, lateral
+              movement, persistence, command and control. Contained in a sandbox,
+              scoped to your own estate, and reported as evidence.
+            </p>
+
+            <!-- Tactic ladder -->
+            <div class="mt-7 grid flex-1 grid-cols-4 gap-8">
+              <div>
+                <div class="rule-accent mb-4"></div>
+                <div class="tag mb-3">Initial access</div>
+                <div class="space-y-1.5">
+                  <div class="p-body">EvilGinx3 phishing</div>
+                  <div class="p-body">Spear-phishing simulation</div>
+                  <div class="p-body">OSINT reconnaissance</div>
+                  <div class="p-body">Social-engineering pretext</div>
+                </div>
+              </div>
+
+              <div class="pt-6">
+                <div class="rule-accent mb-4"></div>
+                <div class="tag mb-3">Credential access</div>
+                <div class="space-y-1.5">
+                  <div class="p-body">LaZagne credential dump</div>
+                  <div class="p-body">DPAPI abuse</div>
+                  <div class="p-body">Kerberoasting</div>
+                  <div class="p-body">Pass-the-ticket</div>
+                </div>
+              </div>
+
+              <div>
+                <div class="rule-accent mb-4"></div>
+                <div class="tag mb-3">Active Directory</div>
+                <div class="space-y-1.5">
+                  <div class="p-body">BloodHound path mapping</div>
+                  <div class="p-body">DCSync persistence</div>
+                  <div class="p-body">ADCS ESC1 abuse</div>
+                  <div class="p-body">Coercer / PetitPotam</div>
+                  <div class="p-body">Constrained delegation</div>
+                </div>
+              </div>
+
+              <div class="pt-6">
+                <div class="rule-accent mb-4"></div>
+                <div class="tag mb-3">Command &amp; control</div>
+                <div class="space-y-1.5">
+                  <div class="p-body">Sliver C2 build &amp; operate</div>
+                  <div class="p-body">Havoc C2</div>
+                  <div class="p-body">C2 redirector infrastructure</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer rail -->
+            <div class="reveal mt-6 hair-grid grid-cols-4">
+              <div>
+                <div class="tag mb-1.5">Lateral movement</div>
+                <p class="p-body">wmiexec, NetExec, EternalBlue, NOPAC, Zerologon, Linux privesc.</p>
+              </div>
+              <div>
+                <div class="tag mb-1.5">Engagement</div>
+                <p class="p-body">Full-scope engagement planning and execution as a repeatable workflow.</p>
+              </div>
+              <div>
+                <div class="tag mb-1.5">Physical</div>
+                <p class="p-body">Physical intrusion assessment as a scoped, documented exercise.</p>
+              </div>
+              <div>
+                <div class="tag tag-accent mb-1.5">The point</div>
+                <p class="p-body text-ink">
+                  An adversary's playbook, runnable on demand against your own
+                  estate — not a PDF.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">White Box · V4 · Red Team</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">18</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 19 — WHITE BOX V4 (PENTEST)
+             Layout: a catalogue strip across the top, then an asymmetric
+             bottom pair — one dominant panel, one secondary.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide dense" data-slide="19" aria-label="White box V4 penetration testing">
+          <div class="ghost-num">19</div>
+
+          <div class="reveal">
+            <div class="mb-4 flex items-center gap-4">
+              <p class="eyebrow">White Box · V4</p>
+              <span class="pill pill-danger">Pentest catalogue</span>
+            </div>
+            <h2 class="h-slide max-w-4xl">The pentest catalogue, on demand</h2>
+          </div>
+
+          <!-- Catalogue strip -->
+          <div class="reveal mt-7 hair-grid grid-cols-4">
+            <div>
+              <div class="rule-accent mb-4"></div>
+              <h3 class="h-sub mb-3">Web &amp; API</h3>
+              <div class="space-y-1.5">
+                <div class="p-body">Web application penetration test</div>
+                <div class="p-body">API security testing</div>
+                <div class="p-body">SQL injection exploitation</div>
+                <div class="p-body">XSS vulnerability testing</div>
+                <div class="p-body">Nessus vulnerability scanning</div>
+              </div>
+            </div>
+
+            <div>
+              <div class="rule-accent mb-4"></div>
+              <h3 class="h-sub mb-3">Network</h3>
+              <div class="space-y-1.5">
+                <div class="p-body">External network penetration test</div>
+                <div class="p-body">Internal network penetration test</div>
+                <div class="p-body">Wireless network penetration test</div>
+                <div class="p-body">External recon with OSINT</div>
+              </div>
+            </div>
+
+            <div>
+              <div class="rule-accent mb-4"></div>
+              <h3 class="h-sub mb-3">Identity &amp; endpoint</h3>
+              <div class="space-y-1.5">
+                <div class="p-body">Active Directory penetration test</div>
+                <div class="p-body">AD attack simulation</div>
+                <div class="p-body">Privilege escalation assessment</div>
+                <div class="p-body">Mobile app penetration test</div>
+                <div class="p-body">Thick-client app penetration test</div>
+                <div class="p-body">IoT security assessment</div>
+              </div>
+            </div>
+
+            <div>
+              <div class="rule-accent mb-4"></div>
+              <h3 class="h-sub mb-3">Human layer</h3>
+              <div class="space-y-1.5">
+                <div class="p-body">Social-engineering penetration test</div>
+                <div class="p-body">Phishing simulation campaign</div>
+                <div class="p-body">Red-team exercise execution</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Asymmetric bottom pair -->
+          <div class="reveal mt-7 grid flex-1 grid-cols-[1.7fr_1fr] gap-8">
+            <div class="card-accent flex flex-col justify-center p-6">
+              <div class="pill pill-accent mb-3 w-fit">AI pentesting</div>
+              <h3 class="h-sub mb-3">Autonomous, with humans on the hook</h3>
+              <p class="p-body">
+                Autonomous agent pentesting of web apps, APIs and infrastructure —
+                with validated findings and audit-ready reports shaped for the
+                management, the auditor, the customer and attestation.
+              </p>
+            </div>
+
+            <div class="panel panel-accent flex flex-col justify-center">
+              <div class="pill pill-warn mb-3 w-fit">Continuous pentests</div>
+              <h3 class="h-sub mb-3">Every deploy, not every year</h3>
+              <p class="p-body">
+                Scoped AI pentest on every deploy, proof-of-exploit findings,
+                AutoFix pull requests, and a per-run audit report.
+              </p>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">White Box · V4 · Pentest</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">19</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 20 — BLACK BOX + AUTHENTICATED DAST
+             Layout: a hard split — the black-box side renders as a live
+             request log; the DAST side as a session timeline.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide dense" data-slide="20" aria-label="Black box testing and authenticated DAST">
+          <div class="ghost-num">20</div>
+
+          <div class="reveal">
+            <p class="eyebrow mb-4">Dynamic Testing</p>
+            <h2 class="h-slide max-w-4xl">From the outside, and from inside the session</h2>
+          </div>
+
+          <div class="mt-7 grid flex-1 grid-cols-2 gap-12">
+            <!-- Left: black box -->
+            <div class="reveal flex flex-col">
+              <div class="mb-3 flex items-center justify-between">
+                <h3 class="h-sub">Black-box surface scan</h3>
+                <span class="pill pill-danger">live HTTP</span>
+              </div>
+              <p class="p-body mb-4">
+                The only agent that reads no source at all. It probes the deployed
+                URL the way an outsider would.
+              </p>
+
+              <div class="term mb-4">
+                <div class="term-bar">
+                  <span class="live-dot" style="width: 6px; height: 6px"></span>
+                  <span>surface scan</span>
+                  <span class="ml-auto text-ink-faint">12 requests · 8s timeout</span>
+                </div>
+                <div class="term-body">
+                  <div class="row"><span class="sig">›</span><span class="dim">GET</span> <span class="key">/</span> <span class="ok">200</span></div>
+                  <div class="row"><span class="sig">›</span><span class="warn">missing</span> <span class="dim">CSP · HSTS</span></div>
+                  <div class="row"><span class="sig">›</span><span class="warn">missing</span> <span class="dim">X-Frame-Options</span></div>
+                  <div class="row"><span class="sig">›</span><span class="warn">cookie</span> <span class="dim">no Secure / HttpOnly</span></div>
+                  <div class="row"><span class="sig">›</span><span class="warn">cors</span> <span class="dim">wildcard + credentials</span></div>
+                  <div class="row"><span class="sig">›</span><span class="warn">exposed</span> <span class="dim">/.git</span></div>
+                  <div class="row"><span class="sig">›</span><span class="dim">blocked</span> <span class="dim">169.254.169.254</span> <span class="ok">SSRF guard</span></div>
+                </div>
+              </div>
+
+              <div class="panel panel-accent mt-auto">
+                <div class="tag tag-accent mb-2">Bounded by design</div>
+                <p class="p-body">
+                  At most 12 passive requests, 8-second timeout, no redirects
+                  followed, and an SSRF guard that refuses private, loopback and
+                  link-local addresses before a socket is opened.
+                </p>
+              </div>
+            </div>
+
+            <!-- Right: authenticated DAST -->
+            <div class="reveal flex flex-col">
+              <div class="mb-3 flex items-center justify-between">
+                <h3 class="h-sub">Authenticated DAST</h3>
+                <span class="pill pill-info">logged-in</span>
+              </div>
+              <p class="p-body mb-4">
+                Daily dynamic scans executed as a logged-in user — the part of an
+                application that anonymous scanners never reach.
+              </p>
+
+              <!-- Session timeline -->
+              <div class="rows mb-4">
+                <div class="flex items-center justify-between gap-4">
+                  <span class="p-body">JWT manipulation and token-reuse checks</span>
+                  <span class="pill pill-muted shrink-0">daily</span>
+                </div>
+                <div class="flex items-center justify-between gap-4">
+                  <span class="p-body">Post-login state and session handling</span>
+                  <span class="pill pill-muted shrink-0">daily</span>
+                </div>
+                <div class="flex items-center justify-between gap-4">
+                  <span class="p-body">Privilege boundary probing between roles</span>
+                  <span class="pill pill-muted shrink-0">daily</span>
+                </div>
+                <div class="flex items-center justify-between gap-4">
+                  <span class="p-body">Authenticated CRUD flow validation</span>
+                  <span class="pill pill-muted shrink-0">daily</span>
+                </div>
+              </div>
+
+              <div class="panel panel-accent mt-auto">
+                <div class="tag tag-accent mb-2">Why it matters</div>
+                <p class="p-body">
+                  The majority of real-world data exposure lives behind a login.
+                  Unauthenticated scanning structurally cannot find it — and this
+                  is where the API security coverage above starts to pay off.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Dynamic Testing</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">20</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 21 — SUPPLY CHAIN & DEPS
+             Layout: a three-column ruled register with a wide footer band —
+             content grouped by rules, never by boxes.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide dense" data-slide="21" aria-label="Supply chain and dependencies">
+          <div class="ghost-num">21</div>
+
+          <div class="reveal">
+            <div class="eyebrow mb-4">Supply Chain</div>
+            <h2 class="h-slide max-w-4xl">Every dependency, every manifest, every image</h2>
+          </div>
+
+          <div class="mt-7 hair-grid grid-cols-3 flex-1 gap-y-8">
+            <div>
+              <div class="rule-accent mb-4"></div>
+              <div class="pill pill-accent mb-3 w-fit">Open-source dependencies</div>
+              <h3 class="h-sub mb-2">Reachability analysis</h3>
+              <p class="p-body">
+                Identify vulnerable packages and determine whether the vulnerable
+                code path is actually reachable — then open an AutoFix upgrade PR.
+              </p>
+            </div>
+
+            <div>
+              <div class="rule-accent mb-4"></div>
+              <div class="pill pill-warn mb-3 w-fit">License risk</div>
+              <h3 class="h-sub mb-2">Copyleft &amp; compliance</h3>
+              <p class="p-body">
+                Inventory dependency licenses and flag copyleft or otherwise
+                non-compliant licences before they reach legal review.
+              </p>
+            </div>
+
+            <div>
+              <div class="rule-accent mb-4"></div>
+              <div class="pill pill-info mb-3 w-fit">Outdated software</div>
+              <h3 class="h-sub mb-2">End-of-life detection</h3>
+              <p class="p-body">
+                Flag end-of-life or outdated runtimes, frameworks and packages
+                while there is still time to migrate.
+              </p>
+            </div>
+
+            <div>
+              <div class="rule-accent mb-4"></div>
+              <div class="pill pill-danger mb-3 w-fit">Malware protection</div>
+              <h3 class="h-sub mb-2">Poisoned package detection</h3>
+              <p class="p-body">
+                Flag malicious packages and malware in dependencies before they
+                enter the codebase at all.
+              </p>
+            </div>
+
+            <div>
+              <div class="rule-accent mb-4"></div>
+              <div class="pill pill-accent mb-3 w-fit">Container images</div>
+              <h3 class="h-sub mb-2">OS &amp; package CVEs</h3>
+              <p class="p-body">
+                Scan container images for operating-system and package
+                vulnerabilities, and ship pre-hardened minimal base images with
+                reduced CVE exposure.
+              </p>
+            </div>
+
+            <div>
+              <div class="rule-accent mb-4"></div>
+              <div class="pill pill-accent mb-3 w-fit">Runtime &amp; K8s</div>
+              <h3 class="h-sub mb-2">Live workload scanning</h3>
+              <p class="p-body">
+                Scan running containers and Kubernetes workloads for
+                vulnerabilities, plus agentless scanning of VMs.
+              </p>
+            </div>
+          </div>
+
+          <div class="reveal card-accent mt-6 flex items-center gap-6 p-5">
+            <div class="pill pill-accent shrink-0">Beyond code</div>
+            <p class="p-body text-ink">
+              Cloud misconfiguration checks across AWS, Azure and GCP, IaC scanning
+              for Terraform and CloudFormation, attack-surface discovery for
+              shadow domains and leaked credentials, endpoint posture on developer
+              devices, and bot protection against scrapers and credential
+              stuffing.
+            </p>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Supply Chain</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">21</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 22 — RUNTIME PROTECTION & AUDIT
+             Layout: a three-beat horizontal narrative with a connecting
+             spine, over a two-column ruled foundation.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide" data-slide="22" aria-label="Runtime protection and audit">
+          <div class="grid-bg absolute inset-0"></div>
+          <div class="ghost-num">22</div>
+
+          <div class="relative reveal flex h-full flex-col">
+            <p class="eyebrow mb-4">Continuous Protection</p>
+            <h2 class="h-slide max-w-4xl">Detect, then block, then prove</h2>
+
+            <!-- Spine + three beats -->
+            <div class="mt-9">
+              <div class="relative mb-8 h-px w-full bg-[color:var(--edge)]">
+                <div
+                  class="absolute left-0 top-0 h-px w-full origin-left bg-[color:var(--ac)] opacity-50"
+                ></div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-10">
+                <div>
+                  <div
+                    class="mb-4 grid h-10 w-10 place-items-center rounded-full bg-[color:var(--ac-soft)] font-mono text-[12px] text-accent"
+                  >
+                    1
+                  </div>
+                  <h3 class="h-sub mb-3">Detect</h3>
+                  <p class="p-body mb-3">
+                    Static rules, taint analysis and model reasoning identify the
+                    vulnerable pattern and its reachability.
+                  </p>
+                  <div class="tag">→ finding with evidence</div>
+                </div>
+
+                <div>
+                  <div
+                    class="mb-4 grid h-10 w-10 place-items-center rounded-full bg-[color:var(--warn-soft)] font-mono text-[12px] text-warn"
+                  >
+                    2
+                  </div>
+                  <h3 class="h-sub mb-3">Block</h3>
+                  <p class="p-body mb-3">
+                    The in-app firewall stops injection, path traversal, SSRF and
+                    bot attacks at runtime — before the fix lands.
+                  </p>
+                  <div class="tag">→ runtime enforcement</div>
+                </div>
+
+                <div>
+                  <div
+                    class="mb-4 grid h-10 w-10 place-items-center rounded-full bg-[color:var(--success-soft)] font-mono text-[12px] text-success"
+                  >
+                    3
+                  </div>
+                  <h3 class="h-sub mb-3">Prove</h3>
+                  <p class="p-body mb-3">
+                    Every scan is a record. Every finding carries severity, CWE or
+                    CVE, evidence and a recommendation — ready for an auditor.
+                  </p>
+                  <div class="tag tag-accent">→ audit-ready trail</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Foundation -->
+            <div class="mt-auto hair-grid grid-cols-2 gap-x-12">
+              <div>
+                <div class="rule-accent mb-4"></div>
+                <h3 class="h-sub mb-3">Evidence, not assertions</h3>
+                <p class="p-body">
+                  A finding is grounded twice: once before the model's cleanup
+                  pass and once after it, then a third time at the persistence
+                  layer. The path must appear in a real diff header or it does not
+                  get stored. Hallucinations fail closed.
+                </p>
+              </div>
+              <div>
+                <div class="rule-accent mb-4"></div>
+                <h3 class="h-sub mb-3">Fails closed, loudly</h3>
+                <p class="p-body">
+                  A missing encryption key is an error, never a silent
+                  zero-findings result. A malformed job is
+                  acknowledged, not retried forever. A broken check becomes an
+                  explicit finding with its stack trace — it never takes its group
+                  down silently.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Runtime Protection</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">22</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 23 — PLATFORM & INTEGRATIONS
+             Layout: two narrative panels above, then a horizontal worker
+             strip rendered as a labelled table.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide" data-slide="23" aria-label="Platform and forges">
+          <div class="ghost-num">23</div>
+
+          <div class="reveal">
+            <p class="eyebrow mb-4">Platform</p>
+            <h2 class="h-slide max-w-4xl">Runs where your code already lives</h2>
+          </div>
+
+          <div class="mt-7 grid grid-cols-2 gap-12">
+            <div class="reveal">
+              <div class="mb-4 flex items-center justify-between">
+                <h3 class="h-sub">Two code hosts, one pipeline</h3>
+                <span class="pill pill-accent">GitHub · GitLab</span>
+              </div>
+              <p class="p-body mb-4">
+                GitHub and GitLab are supported in parallel at every layer. One
+                pipeline, two platforms, no forked codebase.
+              </p>
+              <div class="rows">
+                <div class="p-body">Per-project secrets and multi-repo onboarding</div>
+                <div class="p-body">Repository access granted the standard way, per project</div>
+                <div class="p-body">Same review shape on both: body, inline comments, check run</div>
+              </div>
+            </div>
+
+            <div class="reveal">
+              <div class="mb-4 flex items-center justify-between">
+                <h3 class="h-sub">Operator surface</h3>
+                <span class="pill pill-info">portal</span>
+              </div>
+              <p class="p-body mb-4">
+                A React portal for the platform engineer: enable or disable
+                repositories in bulk, tune review scope, set filters, configure
+                auto-approve with a risk ceiling, and set the black-box scan
+                target per repository.
+              </p>
+              <div class="rows">
+                <div class="p-body">Eight settings sections, every one a single PATCH away</div>
+                <div class="p-body">Per-installation defaults with per-repo overrides</div>
+                <div class="p-body">Analytics on review throughput and coverage</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Surface strip -->
+          <div class="reveal mt-auto">
+            <div class="mb-3 flex items-center gap-3">
+              <span class="tag">One surface</span>
+              <span class="h-px flex-1 bg-[color:var(--edge)]"></span>
+            </div>
+            <div class="hair-grid grid-cols-5">
+              <div>
+                <div class="p-mono mb-1 text-accent">Connect</div>
+                <p class="p-body">Webhooks, CLI, portal — one path in.</p>
+              </div>
+              <div>
+                <div class="p-mono mb-1 text-accent">Read</div>
+                <p class="p-body">Repository indexed, context gathered.</p>
+              </div>
+              <div>
+                <div class="p-mono mb-1 text-accent">Review</div>
+                <p class="p-body">Quality and security, reasoned together.</p>
+              </div>
+              <div>
+                <div class="p-mono mb-1 text-accent">Post</div>
+                <p class="p-body">Findings written back to the pull request.</p>
+              </div>
+              <div>
+                <div class="p-mono mb-1 text-accent">Prove</div>
+                <p class="p-body">Every scan kept as an audit record.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Platform</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">23</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 24 — CLI
+             Layout: a full-width terminal hero on the left, three numbered
+             ingress points stacked on the right.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide" data-slide="24" aria-label="CLI and developer workflow">
+          <div class="ghost-num">24</div>
+
+          <div class="reveal">
+            <p class="eyebrow mb-4">Developer Experience</p>
+            <h2 class="h-slide max-w-4xl">The CLI never writes to your repository</h2>
+            <p class="p-lead mt-3 max-w-3xl">
+              A Rust CLI that mirrors the industry-standard exit codes, so it drops
+              into an existing CI gate without anyone learning a new dialect.
+            </p>
+          </div>
+
+          <div class="mt-7 grid flex-1 grid-cols-[1.15fr_1fr] gap-12">
+            <!-- Terminal hero -->
+            <div class="reveal flex flex-col">
+              <div class="term flex-1">
+                <div class="term-bar">
+                  <span class="live-dot" style="width: 6px; height: 6px"></span>
+                  <span>feluda review</span>
+                  <span class="ml-auto text-ink-faint">exit codes: 0 · 1 · 2</span>
+                </div>
+                <div class="term-body">
+                  <div class="row"><span class="sig">$</span><span class="cmd">feluda review --pr 4821</span></div>
+                  <div class="row"><span class="sig">›</span><span class="dim">submitted</span> <span class="key">job_7f3a</span></div>
+                  <div class="row"><span class="sig">›</span><span class="dim">polling</span> <span class="dim">/v1/reviews/by-pr/4821</span></div>
+                  <div class="row"><span class="sig">›</span><span class="dim">state</span> <span class="key">running</span> <span class="dim">· 6 agents</span></div>
+                  <div class="row"><span class="sig">›</span><span class="dim">state</span> <span class="ok">complete</span></div>
+                  <div class="row"><span class="sig">›</span><span class="dim">review</span> <span class="key">rev_9c21</span> <span class="dim">· 3 findings</span></div>
+                  <div class="row"><span class="sig">›</span><span class="warn">critical</span> <span class="dim">sql-injection · src/orders.ts:88</span></div>
+                  <div class="row"><span class="sig">›</span><span class="warn">high</span> <span class="dim">ssrf · src/proxy.ts:41</span></div>
+                  <div class="row"><span class="sig">›</span><span class="dim">medium</span> <span class="dim">hardcoded-secret · src/db.ts:12</span></div>
+                  <div class="row"><span class="sig">›</span><span class="ok">✓ posted as PR review · no write from CLI</span></div>
+                </div>
+              </div>
+
+              <div class="panel panel-accent mt-5">
+                <div class="tag tag-accent mb-2">Terminal poll</div>
+                <p class="p-mono text-ink">
+                  /v1/reviews/by-pr/:prId → /v1/reviews/:id
+                </p>
+              </div>
+            </div>
+
+            <!-- Three ingress points -->
+            <div class="reveal flex flex-col">
+              <h3 class="h-sub mb-4">Three ways in</h3>
+
+              <div class="rows flex-1">
+                <div>
+                  <div class="mb-2 flex items-center gap-3">
+                    <span class="pill pill-accent">A</span>
+                    <span class="h-sub">Webhook</span>
+                  </div>
+                  <p class="p-body">
+                    Fully automatic — every PR on a connected repository is
+                    reviewed.
+                  </p>
+                </div>
+                <div>
+                  <div class="mb-2 flex items-center gap-3">
+                    <span class="pill pill-accent">B</span>
+                    <span class="h-sub">CLI ingest</span>
+                  </div>
+                  <p class="p-body">
+                    <span class="p-mono text-ink">feluda index</span> walks and
+                    chunks locally, then ships chunks to the API. Works on code the
+                    repository host cannot see.
+                  </p>
+                </div>
+                <div>
+                  <div class="mb-2 flex items-center gap-3">
+                    <span class="pill pill-accent">C</span>
+                    <span class="h-sub">Connector</span>
+                  </div>
+                  <p class="p-body">
+                    A customer connector feeds the same server-side path — three
+                    ingest tiers, one convergence point.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Developer Experience</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">24</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 25 — THE FULL SURFACE (MAP)
+             Layout: five vertical capability columns hanging from one
+             axis, over an oversized metric band.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide" data-slide="25" aria-label="Complete capability map">
+          <div class="grid-bg absolute inset-0"></div>
+          <div class="ghost-num">25</div>
+
+          <div class="relative reveal flex h-full flex-col">
+            <p class="eyebrow mb-4">Coverage</p>
+            <h2 class="h-slide max-w-4xl">The complete capability surface</h2>
+
+            <!-- Axis -->
+            <div class="mt-7 h-px w-full bg-[color:var(--edge)]"></div>
+
+            <div class="grid flex-1 grid-cols-5 gap-7 pt-5">
+              <div>
+                <div class="mb-3 pill pill-accent w-fit">Code</div>
+                <div class="space-y-1.5">
+                  <div class="p-body">AI code review</div>
+                  <div class="p-body">SAST</div>
+                  <div class="p-body">Secrets detection</div>
+                  <div class="p-body">Code quality</div>
+                  <div class="p-body">Architecture review</div>
+                </div>
+              </div>
+
+              <div>
+                <div class="mb-3 pill pill-accent w-fit">White box</div>
+                <div class="space-y-1.5">
+                  <div class="p-body">V1 · core engine</div>
+                  <div class="p-body">V2 · API security</div>
+                  <div class="p-body">V2 · web app</div>
+                  <div class="p-body">V2 · crypto &amp; RASP</div>
+                  <div class="p-body">V3 · pipeline</div>
+                  <div class="p-body">V4 · red team</div>
+                  <div class="p-body">V4 · pentest</div>
+                </div>
+              </div>
+
+              <div>
+                <div class="mb-3 pill pill-danger w-fit">Dynamic</div>
+                <div class="space-y-1.5">
+                  <div class="p-body">Black-box surface scan</div>
+                  <div class="p-body">Authenticated DAST</div>
+                  <div class="p-body">API discovery &amp; fuzzing</div>
+                  <div class="p-body">AI pentesting</div>
+                  <div class="p-body">Continuous pentests</div>
+                  <div class="p-body">Runtime protection</div>
+                </div>
+              </div>
+
+              <div>
+                <div class="mb-3 pill pill-warn w-fit">Supply chain</div>
+                <div class="space-y-1.5">
+                  <div class="p-body">Dependency risk</div>
+                  <div class="p-body">License compliance</div>
+                  <div class="p-body">Malware protection</div>
+                  <div class="p-body">Container images</div>
+                  <div class="p-body">K8s &amp; VM runtime</div>
+                  <div class="p-body">Hardened base images</div>
+                </div>
+              </div>
+
+              <div>
+                <div class="mb-3 pill pill-info w-fit">Platform</div>
+                <div class="space-y-1.5">
+                  <div class="p-body">Cloud misconfig · CSPM</div>
+                  <div class="p-body">Infrastructure as code</div>
+                  <div class="p-body">Attack surface discovery</div>
+                  <div class="p-body">Device posture</div>
+                  <div class="p-body">Bot protection</div>
+                  <div class="p-body">GitHub + GitLab</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Capability band -->
+            <div class="stat-band grid-cols-4 mt-8">
+              <div>
+                <div class="h-sub mb-2 text-accent">Code</div>
+                <div class="p-body">Review, static analysis, secrets and quality in one pass</div>
+              </div>
+              <div>
+                <div class="h-sub mb-2 text-accent">White box</div>
+                <div class="p-body">Source-level exploit knowledge, five maturity tiers deep</div>
+              </div>
+              <div>
+                <div class="h-sub mb-2 text-accent">Dynamic</div>
+                <div class="p-body">Live black-box probing and authenticated session testing</div>
+              </div>
+              <div>
+                <div class="h-sub mb-2 text-accent">Supply chain</div>
+                <div class="p-body">Dependencies, images, licences and runtime workloads</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Coverage</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">25</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 26 — HONEST STATE
+             Layout: three status columns, each led by a state marker —
+             live, next, open — with the open column carrying a caveat.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide" data-slide="26" aria-label="Current state and roadmap">
+          <div class="ghost-num">26</div>
+
+          <div class="reveal">
+            <p class="eyebrow mb-4">Roadmap</p>
+            <h2 class="h-slide max-w-4xl">Where it is, and where it goes</h2>
+            <p class="p-lead mt-3 max-w-3xl">
+              The full catalogue is designed and mapped. The agent engine is live.
+              Here is the honest line between the two.
+            </p>
+          </div>
+
+          <div class="mt-8 hair-grid grid-cols-3 flex-1 gap-x-10">
+            <!-- Live -->
+            <div class="reveal flex flex-col">
+              <div class="rule-accent mb-4"></div>
+              <div class="mb-5 flex items-center gap-3">
+                <span class="status status-live"><i></i>Live today</span>
+              </div>
+              <div class="rows">
+                <div class="p-body">Full-repo context on every pull request</div>
+                <div class="p-body">Three-call LLM review with inline findings</div>
+                <div class="p-body">Six-agent security fan-out on every PR</div>
+                <div class="p-body">Deterministic rule floor with taint tracking</div>
+                <div class="p-body">Path-grounded findings, persisted and posted</div>
+                <div class="p-body">GitHub and GitLab, parallel end to end</div>
+              </div>
+            </div>
+
+            <!-- Next -->
+            <div class="reveal flex flex-col">
+              <div class="rule-accent mb-4"></div>
+              <div class="mb-5 flex items-center gap-3">
+                <span class="status status-next"><i></i>Highest leverage next</span>
+              </div>
+              <div class="space-y-4">
+                <div class="panel panel-accent">
+                  <p class="p-body text-ink">
+                    Give the runtime specialist the full repository context it
+                    needs — the path is already proven end to end
+                  </p>
+                </div>
+                <div class="panel panel-accent">
+                  <p class="p-body text-ink">
+                    Hand the live-system specialist the change context it is
+                    missing today
+                  </p>
+                </div>
+                <div class="panel panel-accent">
+                  <p class="p-body text-ink">
+                    Reconcile the docs with the code — the catalogue has drifted
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Open -->
+            <div class="reveal flex flex-col">
+              <div class="rule-accent mb-4"></div>
+              <div class="mb-5 flex items-center gap-3">
+                <span class="status status-open"><i></i>Needs its own decision</span>
+              </div>
+              <div class="rows">
+                <div class="p-body">Authenticated and active black-box testing</div>
+                <div class="p-body">Runtime protection as a shipped enforcement layer</div>
+                <div class="p-body">Cloud and endpoint posture beyond code</div>
+                <div class="p-body">Red-team execution scope and guardrails</div>
+              </div>
+              <div class="panel panel-accent mt-auto">
+                <p class="p-body">
+                  These are not just engineering tasks — they change the product's
+                  legal and safety posture. Each deserves its own decision before
+                  it ships.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Roadmap</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">26</span>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SLIDE 27 — CLOSING
+             Layout: an asymmetric off-centre close with a metric rail on
+             the right and contact chips on the left.
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="slide" data-slide="27" aria-label="Closing">
+          <div class="grid-bg absolute inset-0"></div>
+          <div
+            class="bloom"
+            style="width: 700px; height: 700px; top: -240px; left: 42%; transform: translateX(-50%); opacity: 0.12"
+          ></div>
+          <div class="ghost-num">27</div>
+
+          <div class="relative flex h-full flex-col justify-center">
+            <div class="reveal grid grid-cols-[1.55fr_1fr] gap-20 items-center">
+              <!-- Left: the statement -->
+              <div>
+                <p class="eyebrow mb-6">Feluda</p>
+                <h2
+                  class="text-[length:var(--fs-display)] font-semibold leading-[var(--lh-tight)] tracking-[var(--ls-display)] text-ink"
+                >
+                  Every commit reviewed.<br />
+                  <span class="text-accent">Every deploy attacked.</span>
+                </h2>
+                <p
+                  class="mt-7 max-w-[46ch] text-[length:var(--fs-lead)] leading-[var(--lh-body)] text-ink-soft"
+                >
+                  The gap between a code reviewer and a penetration tester was
+                  always coverage. Feluda closes it by running both, on every
+                  change, without asking you to change a single pipeline.
+                </p>
+
+                <div class="mt-9 flex items-center gap-3">
+                  <span class="pill pill-accent">feluda.puku.sh</span>
+                  <span class="pill pill-muted">github.com/feluda-sh</span>
+                </div>
+              </div>
+
+              <!-- Right: what it does, not numbers -->
+              <div class="reveal">
+                <div class="rows">
+                  <div class="p-body">
+                    <span class="text-ink">Reads the whole repository</span> — not
+                    just the diff
+                  </div>
+                  <div class="p-body">
+                    <span class="text-ink">Runs specialist agents in parallel</span> —
+                    six, one per discipline
+                  </div>
+                  <div class="p-body">
+                    <span class="text-ink">Attacks the deployed system</span> — the
+                    part scanners never reach
+                  </div>
+                  <div class="p-body">
+                    <span class="text-ink">Ships the fix</span> — a pull request,
+                    not a spreadsheet row
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-footer">
+            <span class="chap">Close</span>
+            <div class="track"><div class="fill"></div></div>
+            <span class="slide-num">27</span>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ── Navigation ───────────────────────────────────────────────────── -->
+    <button id="prev" class="nav" aria-label="Previous slide">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 18l6-6-6-6" />
+      </svg>
+    </button>
+    <button id="next" class="nav" aria-label="Next slide">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M15 18l-6-6 6-6" />
+      </svg>
+    </button>
+
+    <div id="hint">
+      <kbd>←</kbd><kbd>→</kbd>
+      <span>Navigate</span>
+    </div>
+
+    <div class="sr-only" aria-live="polite" id="live"></div>
+
+    <script>
+      /* ═══════════════════════════════════════════════════════════════════
+         DECK ENGINE
+         - fixed 1280×720 canvas scaled to fit the viewport
+         - slide transitions + staggered content reveals via Motion
+         - keyboard, click, wheel and touch navigation
+         ═══════════════════════════════════════════════════════════════════ */
+      (() => {
+        "use strict";
+
+        const deck = document.getElementById("deck");
+        const slides = Array.from(document.querySelectorAll(".slide"));
+        const live = document.getElementById("live");
+        const prevBtn = document.getElementById("prev");
+        const nextBtn = document.getElementById("next");
+        const hint = document.getElementById("hint");
+
+        let current = 0;
+        const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        /* ── Motion handle. The CDN UMD bundle publishes `window.Motion`.
+              If it failed to load, substitute a no-op so the deck still
+              navigates and every slide still renders (just without motion). ── */
+        const M = window.Motion || null;
+        const canAnimate = !!(M && typeof M.animate === "function") && !reduced;
+        const animate = (el, keyframes, options) => {
+          if (!canAnimate) return null;
+          try {
+            return M.animate(el, keyframes, options);
+          } catch (err) {
+            console.warn("feluda-deck: animation failed", err);
+            return null;
+          }
+        };
+
+        /* ── Scale the fixed canvas to the viewport ─────────────────────── */
+        function fit() {
+          const pad = reduced ? 0 : 24;
+          const sx = (window.innerWidth - pad) / 1280;
+          const sy = (window.innerHeight - pad) / 720;
+          const s = Math.min(sx, sy);
+          deck.style.transform = `scale(${s})`;
+        }
+        window.addEventListener("resize", fit);
+        fit();
+
+        /* ── Theme values, read fresh so a theme.css edit is picked up ──── */
+        const css = getComputedStyle(document.documentElement);
+        const tok = (name) => css.getPropertyValue(name).trim();
+
+        /* ── Reveal the contents of a slide, staggered ──────────────────── */
+        function revealContent(slide, direction) {
+          const groups = Array.from(slide.querySelectorAll(".reveal"));
+          const targets = [];
+
+          groups.forEach((group) => {
+            const kids = Array.from(group.children);
+            kids.forEach((kid, i) => {
+              targets.push({ el: kid, i: kids.length > 1 ? i : 0 });
+            });
+          });
+
+          if (!canAnimate || targets.length === 0) {
+            targets.forEach(({ el }) => {
+              el.style.opacity = "1";
+              el.style.transform = "none";
+            });
+            return;
+          }
+
+          const stagger = parseFloat(tok("--stagger")) || 0.055;
+          const duration = parseFloat(tok("--dur-slow")) || 0.72;
+
+          targets.forEach(({ el }, n) => {
+            animate(
+              el,
+              {
+                opacity: [0, 1],
+                transform: [
+                  `translateY(${direction * 26}px)`,
+                  "translateY(0px)",
+                ],
+              },
+              {
+                duration,
+                delay: n * stagger,
+                easing: [0.22, 1, 0.36, 1],
+              }
+            );
+          });
+        }
+
+        /* ── Transition between slides ──────────────────────────────────── */
+        function go(index, direction = 1) {
+          if (index < 0 || index >= slides.length || index === current) return;
+
+          const outgoing = slides[current];
+          const incoming = slides[index];
+          const dur = parseFloat(tok("--dur-slide")) || 0.55;
+
+          outgoing.classList.remove("is-active");
+
+          animate(
+            outgoing,
+            { opacity: [1, 0], transform: ["scale(1)", "scale(0.985)"] },
+            { duration: dur * 0.55, easing: [0.65, 0, 0.35, 1] }
+          );
+
+          incoming.classList.add("is-active");
+
+          animate(
+            incoming,
+            { opacity: [0, 1], transform: ["scale(1.015)", "scale(1)"] },
+            { duration: dur, easing: [0.22, 1, 0.36, 1] }
+          );
+
+          current = index;
+          updateChrome();
+          revealContent(incoming, direction);
+          live.textContent = `Slide ${index + 1} of ${slides.length}: ${
+            incoming.getAttribute("aria-label") || ""
+          }`;
+        }
+
+        const next = () => go(current + 1, 1);
+        const prev = () => go(current - 1, -1);
+
+        /* ── Footer chrome: progress bar + slide number ─────────────────── */
+        function updateChrome() {
+          slides.forEach((s) => {
+            const fill = s.querySelector(".fill");
+            const num = s.querySelector(".slide-num");
+            if (fill) fill.style.width = `${((current + 1) / slides.length) * 100}%`;
+            if (num) num.textContent = String(current + 1).padStart(2, "0");
+          });
+          prevBtn.disabled = current === 0;
+          nextBtn.disabled = current === slides.length - 1;
+        }
+
+        /* ── Input handling ─────────────────────────────────────────────── */
+        nextBtn.addEventListener("click", next);
+        prevBtn.addEventListener("click", prev);
+
+        document.addEventListener("keydown", (e) => {
+          if (e.metaKey || e.ctrlKey || e.altKey) return;
+          switch (e.key) {
+            case "ArrowRight":
+            case "PageDown":
+            case " ":
+              e.preventDefault();
+              next();
+              break;
+            case "ArrowLeft":
+            case "PageUp":
+              e.preventDefault();
+              prev();
+              break;
+            case "Home":
+              e.preventDefault();
+              go(0, -1);
+              break;
+            case "End":
+              e.preventDefault();
+              go(slides.length - 1, 1);
+              break;
+          }
+        });
+
+        /* Wheel — throttled so a trackpad flick does not skip slides. */
+        let wheelLock = false;
+        document.addEventListener(
+          "wheel",
+          (e) => {
+            if (wheelLock) return;
+            if (Math.abs(e.deltaY) < 18) return;
+            wheelLock = true;
+            setTimeout(() => (wheelLock = false), 620);
+            e.deltaY > 0 ? next() : prev();
+          },
+          { passive: true }
+        );
+
+        /* Touch — horizontal swipe. */
+        let touchX = null;
+        document.addEventListener(
+          "touchstart",
+          (e) => (touchX = e.touches[0].clientX),
+          { passive: true }
+        );
+        document.addEventListener(
+          "touchend",
+          (e) => {
+            if (touchX === null) return;
+            const dx = e.changedTouches[0].clientX - touchX;
+            if (Math.abs(dx) > 48) (dx < 0 ? next : prev)();
+            touchX = null;
+          },
+          { passive: true }
+        );
+
+        /* Hide the keyboard hint after first interaction. */
+        let hinted = false;
+        const dismissHint = () => {
+          if (hinted) return;
+          hinted = true;
+          hint.style.opacity = "0";
+        };
+        document.addEventListener("keydown", dismissHint, { once: true });
+        document.addEventListener("click", dismissHint, { once: true });
+        setTimeout(dismissHint, 7000);
+
+        /* ── Boot ───────────────────────────────────────────────────────── */
+        /* Deep-link support: /#14 opens directly on slide 14. */
+        function slideFromHash() {
+          const raw = (location.hash || "").replace(/[^0-9]/g, "");
+          if (!raw) return 0;
+          const n = parseInt(raw, 10) - 1;
+          return n >= 0 && n < slides.length ? n : 0;
+        }
+
+        const start = slideFromHash();
+        current = start;
+        slides[current].classList.add("is-active");
+        updateChrome();
+        revealContent(slides[current], 1);
+        live.textContent = `Slide ${current + 1} of ${slides.length}: ${
+          slides[current].getAttribute("aria-label") || ""
+        }`;
+
+        window.addEventListener("hashchange", () => {
+          const n = slideFromHash();
+          if (n !== current) go(n, n > current ? 1 : -1);
+        });
+
+        /* Expose a tiny API for scripted control (screenshots, embeds). */
+        window.feludaDeck = {
+          go: (n) => go(n, n > current ? 1 : -1),
+          next,
+          prev,
+          get current() {
+            return current;
+          },
+          get total() {
+            return slides.length;
+          },
+        };
+      })();
+    </script>
+  </body>
+</html>
